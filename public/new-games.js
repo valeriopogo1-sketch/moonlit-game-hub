@@ -96,7 +96,11 @@ function renderFish(v,ctx){
   controls=isGuesser?'<div class="notice">You are the Guesser. Wait for each fish to invent or reveal their answer. You cannot see the real answer yet.</div>':
    '<div class="notice">Your role: '+esc(g.role)+'. The true answer is <strong>'+esc(g.answer)+'</strong>. '+(g.role==='True Blue'?'You must submit the exact real answer.':'Invent a believable false answer.')+'</div>'+
    (g.hasAnswered?'<div class="notice">Answer submitted. Waiting for the other fish.</div>':
-   '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" placeholder="Enter your answer"></label>'+btn('Submit answer','answer'));
+   (g.multipleAnswers?
+    '<div class="notice">Force Start: submit two answers. Suggested answers are editable.'+(g.role==='True Blue'?' Keep your first answer correct; your second must be fake.':' Both answers must be convincing fakes.')+'</div>'+
+    g.answerFields.map((f,i)=>'<label class="field"><span>'+esc(f.label)+'</span><input class="input fish-answer-field" maxlength="160" data-fish-index="'+i+'" value="'+esc(f.suggestion)+'" placeholder="Edit this answer"></label>').join('')+
+    btn('Submit both answers','answer'):
+    '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" placeholder="Enter your answer"></label>'+btn('Submit answer','answer')));
  }else if(g.phase==='catch'){
   controls='<p class="info">The Guesser catches suspected Red Herrings one at a time. Catching Blue ends the turn with zero Guesser points.</p>'+
    '<div class="results-list">'+Object.entries(g.answers).map(([id,response])=>'<div class="result-row"><div><span>Fish '+esc(id)+'</span><p class="info">'+esc(response)+'</p></div><div>'+(g.flipped.includes(id)?'<span class="tag">FLIPPED</span>':isGuesser?'<button class="btn small" data-fish-catch="'+esc(id)+'">Catch 🐟</button>':'<span class="tiny">Hidden</span>')+'</div></div>').join('')+'</div>'+
@@ -106,6 +110,6 @@ function renderFish(v,ctx){
    (isGuesser?btn('Next round','next'):'<p class="info">Waiting for the Guesser to advance.</p>');
  }else controls='<div class="notice">Game finished! Winner(s): '+esc((g.winner||[]).map(names).join(', '))+'</div>';
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">🐠</div><div><h3>Round '+(g.round+1)+' / '+g.maxRounds+'</h3><p>Guesser: '+esc(names(g.guesser))+'</p></div></div><div class="role-card"><span class="role-emoji">🐟</span><div class="team">'+esc(g.role)+'</div><h2>'+esc(g.question)+'</h2><p>'+(isGuesser?'Find the fake answers, but avoid the true one.':'The true answer is: '+esc(g.answer))+'</p></div><div class="label">SCORES</div><div class="results-list">'+scores+'</div>'+controls+'</div>'+foot;
- ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='answer')ctx.cmd('play',{action:'answer',answer:ctx.app.querySelector('#fish-answer')?.value});if(a==='bank'||a==='next')ctx.cmd('play',{action:a});});
+ ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='answer'){const fields=[...ctx.app.querySelectorAll('.fish-answer-field')];ctx.cmd('play',g.multipleAnswers?{action:'answer',answers:fields.map(f=>f.value)}:{action:'answer',answer:ctx.app.querySelector('#fish-answer')?.value});}if(a==='bank'||a==='next')ctx.cmd('play',{action:a});});
  ctx.app.querySelectorAll('[data-fish-catch]').forEach(b=>b.onclick=()=>ctx.cmd('play',{action:'catch',target:b.dataset.fishCatch}));
 }
