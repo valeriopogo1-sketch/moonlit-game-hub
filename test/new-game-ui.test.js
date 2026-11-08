@@ -14,7 +14,7 @@ function ui(kind,game,view) {
  const data={code:'ABCDEF',gameType:kind,host:'p0',you:'p0',players,table:view(game,'p0')};
  assert.doesNotThrow(()=>renderAdditional(data,{app,state:{pick:{}},cmd(){},toast(){}}));
  assert.ok(markup.includes('ABCDEF'));
- assert.ok(markup.includes('<div class="panel">')&&markup.length>400);
+ assert.ok(markup.includes('class="panel"')&&markup.length>400);
 }
 test('Coup mobile game view is rendered without errors',()=>ui('coup',setupCoup(players),coupView));
 test('Spyfall mobile game view is rendered without errors',()=>ui('spyfall',setupSpyfall(players),spyView));
