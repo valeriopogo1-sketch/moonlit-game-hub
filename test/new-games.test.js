@@ -79,41 +79,45 @@ test('Chameleon points carry across rounds, dealer rotates',()=>{
  assert.equal(g.phase,'clues');assert.equal(g.dealer,last);assert.equal(g.round,2);assert.equal(g.points[last],1);
 });
 
-test('Normal Fish Frenzy still requires four players; forced two-player mode has editable suggestions',()=>{
+test('Normal Fish Frenzy still requires four players, forced 2-player Blue creates four editable answers',()=>{
  const two=players.slice(0,2);
  assert.throws(()=>setupFish(two),/requires 4/);
- const game=setupFish(two,{force:true});
- assert.equal(game.phase,'answer');
- const responder=two.find(p=>p.id!==game.guesser).id;
- const view=fishView(game,responder);
- assert.equal(view.role,'True Blue');
- assert.equal(view.answerFields.length,2);
- assert.equal(view.answerFields[0].suggestion,game.answer);
- assert.notEqual(view.answerFields[1].suggestion,game.answer);
- assert.equal(view.answerFields[1].correct,false);
- assert.equal(fishView(game,game.guesser).answerFields,null);
- assert.throws(()=>fishMove(game,responder,{action:'answer',answers:[game.answer,game.answer]}),/different/);
- fishMove(game,responder,{action:'answer',answers:[game.answer,'My editable fake']});
- assert.equal(game.phase,'catch');
- const guesserView=fishView(game,game.guesser);
- assert.equal(Object.keys(guesserView.answers).length,4);
- assert.deepEqual(Object.keys(guesserView.answers).sort(),['A','B','C','D']);
- assert.equal(new Set(Object.values(guesserView.answers).map(v=>v.toLowerCase())).size,4);
- assert.equal(guesserView.answer,null);
- assert.ok(!Object.keys(guesserView.answers).includes(responder));
- const fakes=Object.keys(game.options).filter(label=>game.options[label]!==game.blueKey);
- for(const label of fakes)fishMove(game,game.guesser,{action:'catch',target:label});
- assert.equal(game.phase,'round-results');
- assert.equal(game.scores[game.guesser],4);
- assert.equal(game.last.guesserPoints,4);
+ for(const difficulty of ['easy','medium','hard']){
+  const g=setupFish(two,{force:true,difficulty});
+  const blue=g.order.find(p=>p!==g.guesser);
+  const view=fishView(g,blue);
+  assert.equal(view.role,'True Blue');
+  assert.equal(view.answerFields.length,4);
+  assert.deepEqual(view.answerFields.map(f=>f.correct),[true,false,false,false]);
+  assert.equal(view.answerFields[0].suggestion,g.answer);
+  const suggestions=view.answerFields.slice(1).map(f=>f.suggestion);
+  assert.equal(new Set(suggestions.map(x=>x.toLowerCase())).size,3);
+  assert.ok(suggestions.every(s=>s.toLowerCase()!==g.answer.toLowerCase()));
+  assert.equal(fishView(g,g.guesser).answerFields,null);
+  assert.throws(()=>fishMove(g,blue,{action:'answer',answers:[g.answer,'Only one fake']}),/exactly 4/);
+  assert.throws(()=>fishMove(g,blue,{action:'answer',answers:[g.answer,'Duplicate','Duplicate','Another']}),/different/);
+  const submitted=[g.answer,'Edited bluff A','Edited bluff B','Edited bluff C'];
+  fishMove(g,blue,{action:'answer',answers:submitted});
+  assert.equal(g.phase,'catch');
+  const guesserView=fishView(g,g.guesser);
+  assert.deepEqual(Object.keys(guesserView.answers).sort(),['A','B','C','D']);
+  assert.equal(new Set(Object.values(guesserView.answers)).size,4);
+  assert.equal(guesserView.answer,null);
+  assert.deepEqual(Object.values(guesserView.answers).sort(),submitted.sort());
+  const fakes=Object.keys(g.options).filter(label=>g.options[label]!==g.blueKey);
+  for(const label of fakes)fishMove(g,g.guesser,{action:'catch',target:label});
+  assert.equal(g.phase,'round-results');
+  assert.equal(g.scores[g.guesser],4);
+ }
 });
-test('Forced two-player Fish Frenzy rotates with two answers per player',()=>{
+test('Forced two-player Fish Frenzy rotates using four human-submitted answers',()=>{
  const game=setupFish(players.slice(0,2),{force:true});
  const seen=new Set();
  while(game.phase!=='results'){
   seen.add(game.guesser);
-  const human=game.order.find(id=>id!==game.guesser);
-  fishMove(game,human,{action:'answer',answers:[game.answer,'Custom fake answer']});
+  const blue=game.order.find(id=>id!==game.guesser);
+  fishMove(game,blue,{action:'answer',answers:[game.answer,'Editable fake 1','Editable fake 2','Editable fake 3']});
+  assert.equal(Object.keys(game.answers).length,4);
   fishMove(game,game.guesser,{action:'bank'});
   fishMove(game,game.guesser,{action:'next'});
  }
@@ -160,8 +164,8 @@ test('Forced two-player match always displays four nonduplicate shuffled answers
  for(const difficulty of ['easy','medium','hard']){
   const game=setupFish(players.slice(0,2),{force:true,difficulty});
   const blue=game.blue,fields=fishView(game,blue).answerFields;
-  assert.equal(fields.length,2);
-  fishMove(game,blue,{action:'answer',answers:[game.answer,fields[1].suggestion]});
+  assert.equal(fields.length,4);
+  fishMove(game,blue,{action:'answer',answers:[game.answer,...fields.slice(1).map(f=>f.suggestion)]});
   const choiceView=fishView(game,game.guesser);
   assert.equal(Object.keys(choiceView.answers).length,4);
   assert.equal(new Set(Object.values(choiceView.answers).map(s=>s.toLowerCase())).size,4);
