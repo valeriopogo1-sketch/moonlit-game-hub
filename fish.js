@@ -19,6 +19,35 @@ export const QUESTIONS=[
  ['What gas do humans inhale to support cellular respiration?','Oxygen'],
  ['What is the main ingredient in traditional hummus?','Chickpeas']
 ];
+export const MEDIUM_QUESTIONS=[
+ ['What is the smallest country in the world by area?','Vatican City'],
+ ['What element has the atomic number 6?','Carbon'],
+ ['Who painted The Persistence of Memory?','Salvador Dalí'],
+ ['Which country is home to the ancient city of Petra?','Jordan'],
+ ['Which part of the eye controls the amount of light entering?','Iris'],
+ ['What is the currency of South Korea?','Won'],
+ ['Which scientist formulated the three laws of motion?','Isaac Newton'],
+ ['What is the capital of New Zealand?','Wellington'],
+ ['Which river flows through Budapest?','Danube'],
+ ['What is the largest internal organ in the human body?','Liver'],
+ ['Which planet has the longest day due to its slow rotation?','Venus'],
+ ['What language is primarily spoken in Brazil?','Portuguese']
+];
+export const HARD_QUESTIONS=[
+ ['Which element has the chemical symbol W?','Tungsten'],
+ ['Which moon of Saturn has lakes of liquid methane?','Titan'],
+ ['What is the SI unit of electric capacitance?','Farad'],
+ ['Which treaty ended the Thirty Years War in 1648?','Peace of Westphalia'],
+ ['What is the deepest known point in Earth\'s oceans?','Challenger Deep'],
+ ['Which mathematician is known for the incompleteness theorems?','Kurt Gödel'],
+ ['What is the study of fungi called?','Mycology'],
+ ['Which enzyme unwinds the DNA double helix during replication?','Helicase'],
+ ['Which empire built the city of Tikal?','Maya'],
+ ['What is the capital of Bhutan?','Thimphu'],
+ ['What is the most abundant noble gas in Earth\'s atmosphere?','Argon'],
+ ['Which particle mediates the electromagnetic force?','Photon']
+];
+export const DIFFICULTIES=['easy','medium','hard'];
 const DECOYS=[
  ['Emu','Albatross','Cassowary'],['Mango','Papaya','Cucumber'],
  ['Flying squirrel','Sugar glider','Flying lemur'],['Atlantic Ocean','Indian Ocean','Arctic Ocean'],
@@ -28,6 +57,24 @@ const DECOYS=[
  ['Venus','Mars','Earth'],['Kyoto','Osaka','Seoul'],['Seven','Eight','Five'],
  ['Nitrogen','Hydrogen','Carbon dioxide'],['Lentils','Peanuts','Soybeans']
 ];
+const MEDIUM_DECOYS=[
+ ['Monaco','San Marino','Liechtenstein'],['Boron','Nitrogen','Oxygen'],['Pablo Picasso','René Magritte','Joan Miró'],
+ ['Greece','Lebanon','Egypt'],['Pupil','Cornea','Retina'],['Yen','Yuan','Baht'],
+ ['Albert Einstein','Galileo Galilei','Johannes Kepler'],['Auckland','Christchurch','Hamilton'],
+ ['Rhine','Seine','Elbe'],['Brain','Kidney','Spleen'],['Mercury','Mars','Jupiter'],['Spanish','French','Italian']
+];
+const HARD_DECOYS=[
+ ['Tin','Tantalum','Titanium'],['Europa','Enceladus','Ganymede'],['Ohm','Henry','Tesla'],
+ ['Treaty of Utrecht','Treaty of Versailles','Treaty of Tordesillas'],['Puerto Rico Trench','Java Trench','Tonga Trench'],
+ ['Alan Turing','David Hilbert','Georg Cantor'],['Entomology','Phycology','Bryology'],
+ ['Ligase','Polymerase','Primase'],['Inca','Aztec','Olmec'],['Kathmandu','Paro','Lhasa'],
+ ['Neon','Krypton','Xenon'],['Gluon','Graviton','Neutrino']
+];
+const BANK={
+ easy:QUESTIONS.map((item,i)=>({question:item[0],answer:item[1],decoys:DECOYS[i]})),
+ medium:MEDIUM_QUESTIONS.map((item,i)=>({question:item[0],answer:item[1],decoys:MEDIUM_DECOYS[i]})),
+ hard:HARD_QUESTIONS.map((item,i)=>({question:item[0],answer:item[1],decoys:HARD_DECOYS[i]}))
+};
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=randomInt(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
 const isMulti=g=>g.forced&&g.order.length<4;
 const normalize=s=>String(s??'').trim().replace(/\s+/g,' ');
@@ -38,26 +85,26 @@ function prepareOptions(g){
  g.options=Object.fromEntries(ids.map((id,i)=>[String.fromCharCode(65+i),id]));
 }
 function suggested(g,id){
- const idx=QUESTIONS.findIndex(([q])=>q===g.question);
- const pool=DECOYS[idx]||['Unknown','Mystery','Surprise'];
+ const pool=g.currentDecoys||['Unknown','Mystery','Surprise'];
  const offset=Math.max(0,g.order.indexOf(id))%pool.length;
  return [pool[offset],pool[(offset+1)%pool.length]];
 }
 function nextQuestion(g){
- const [question,answer]=g.questions[g.round%g.questions.length];
- g.question=question;g.answer=answer;g.guesser=g.order[g.round%g.order.length];
+ const item=g.questions[g.round%g.questions.length];
+ g.question=item.question;g.answer=item.answer;g.currentDecoys=item.decoys;g.guesser=g.order[g.round%g.order.length];
  const others=g.order.filter(id=>id!==g.guesser);
  g.blue=others[randomInt(others.length)];
  g.blueKey=answerKey(g,g.blue,0);
  g.answers={};g.options={};g.flipped=[];g.submitted=[];g.phase='answer';g.last=null;
 }
-export function setupFish(players,{force=false}={}){
+export function setupFish(players,{force=false,difficulty='easy'}={}){
+ if(!DIFFICULTIES.includes(difficulty))throw Error('Invalid question difficulty');
  if(players.length>10||players.length<(force?2:4))throw Error('Fish Frenzy requires 4–10 players normally or at least 2 with Force Start');
  const order=players.map(p=>p.id);
  if(new Set(order).size!==order.length)throw Error('Duplicate players');
- const g={kind:'fish',forced:!!force,phase:'answer',order,round:0,
+ const g={kind:'fish',forced:!!force,difficulty,phase:'answer',order,round:0,
   maxRounds:order.length*(order.length<=5?2:1),
-  scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(QUESTIONS),
+  scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(BANK[difficulty]),
   question:null,answer:null,guesser:null,blue:null,blueKey:null,
   answers:{},options:{},submitted:[],flipped:[],winner:[],last:null};
  nextQuestion(g);return g;
@@ -136,7 +183,7 @@ export function fishView(g,id){
      ?[{label:'Correct answer',suggestion:g.answer,correct:true},{label:'Suggested fake answer',suggestion:suggestions[0],correct:false}]
      :[{label:'Suggested fake answer 1',suggestion:suggestions[0],correct:false},{label:'Suggested fake answer 2',suggestion:suggestions[1],correct:false}])
   :null;
- return {kind:'fish',forced:g.forced,multipleAnswers:isMulti(g),phase:g.phase,
+ return {kind:'fish',forced:g.forced,difficulty:g.difficulty,multipleAnswers:isMulti(g),phase:g.phase,
   question:g.question,answer:id===g.guesser&&!reveal?null:g.answer,
   role,guesser:g.guesser,answerFields,
   answers:g.phase==='answer'?Object.fromEntries(g.submitted.map(pid=>[pid,'Submitted']))
