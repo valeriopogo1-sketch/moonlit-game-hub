@@ -1,0 +1,13 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {setupLines,lineMove,linesView,makeBoard,linesFor} from '../lines.js';
+import {setupOrgans,organMove,organView,alive} from '../organs.js';
+const players=[{id:'alice',name:'Alice'},{id:'bob',name:'Bob'}];
+test('Five in a Row creates a 64-square board with four free corners',()=>{const b=makeBoard();assert.equal(b.length,64);assert.equal(b.filter(x=>x==='FREE').length,4);});
+test('Five in a Row hands remain private',()=>{const g=setupLines(players);const a=linesView(g,'alice'),b=linesView(g,'bob');assert.equal(a.hand.length,5);assert.equal(b.hand.length,5);assert.equal(a.hands,undefined);assert.equal(a.deck,undefined);});
+test('Five in a Row rejects out-of-turn actions',()=>{const g=setupLines(players);assert.throws(()=>lineMove(g,'bob',{cardIndex:0,cell:10}),/Not your turn/);});
+test('Five in a Row detects horizontal five',()=>{const g=setupLines(players);g.chips.splice(10,5,...Array(5).fill('alice'));assert.ok(linesFor(g,'alice').some(a=>a.join(',')==='10,11,12,13,14'));});
+test('Organ Mayhem has four organs and private hands',()=>{const g=setupOrgans(players);assert.equal(Object.keys(g.bodies.alice).length,4);const a=organView(g,'alice');assert.equal(a.hand.length,5);assert.equal(a.hands,undefined);assert.equal(a.deck,undefined);});
+test('Organ Mayhem rejects wrong turn',()=>{const g=setupOrgans(players);assert.throws(()=>organMove(g,'bob',{cardIndex:0,discard:true}),/Not your turn/);});
+test('Organ Mayhem allows discarding a card to pass',()=>{const g=setupOrgans(players);const original=g.hands.alice.length;organMove(g,'alice',{cardIndex:0,discard:true});assert.equal(g.order[g.turn],'bob');assert.equal(g.hands.alice.length,original);});
+test('Organ Mayhem rejects invalid targets',()=>{const g=setupOrgans(players);assert.throws(()=>organMove(g,'alice',{cardIndex:0,target:'unknown',part:'heart'}),/Invalid target/);});
