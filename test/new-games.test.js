@@ -78,3 +78,44 @@ test('Chameleon points carry across rounds, dealer rotates',()=>{
  chameleonMove(g,last,{action:'next'});
  assert.equal(g.phase,'clues');assert.equal(g.dealer,last);assert.equal(g.round,2);assert.equal(g.points[last],1);
 });
+
+test('Fish Frenzy normal start requires four players, force start allows two',()=>{
+ const two=players.slice(0,2);
+ assert.throws(()=>setupFish(two),/requires 4/);
+ const game=setupFish(two,{force:true});
+ assert.equal(game.order.length,2);
+ assert.equal(game.phase,'answer');
+ const responder=two.find(p=>p.id!==game.guesser).id;
+ fishMove(game,responder,{action:'answer',answer:game.answer});
+ assert.equal(game.phase,'catch');
+ const guestView=fishView(game,game.guesser);
+ assert.equal(Object.keys(guestView.answers).length,2);
+ assert.deepEqual(Object.keys(guestView.answers).sort(),['A','B']);
+ assert.equal(guestView.answer,null);
+ assert.ok(!Object.keys(guestView.answers).includes(responder));
+ const fake=Object.keys(game.options).find(label=>game.options[label]!==game.blue);
+ fishMove(game,game.guesser,{action:'catch',target:fake});
+ assert.equal(game.phase,'round-results');
+ assert.equal(game.scores[game.guesser],2);
+ assert.equal(game.last.guesserPoints,2);
+});
+test('Two-player forced Fish Frenzy can rotate across all rounds',()=>{
+ const game=setupFish(players.slice(0,2),{force:true});
+ let seen=new Set();
+ while(game.phase!=='results'){
+  seen.add(game.guesser);
+  const human=game.order.find(id=>id!==game.guesser);
+  fishMove(game,human,{action:'answer',answer:game.answer});
+  fishMove(game,game.guesser,{action:'bank'});
+  fishMove(game,game.guesser,{action:'next'});
+ }
+ assert.equal(seen.size,2);
+ assert.equal(game.round,game.maxRounds);
+});
+test('Fish Frenzy can force-start with three participants without bots',()=>{
+ const game=setupFish(players.slice(0,3),{force:true});
+ for(const id of game.order.filter(id=>id!==game.guesser))
+  fishMove(game,id,{action:'answer',answer:id===game.blue?game.answer:'False answer'});
+ assert.equal(game.phase,'catch');
+ assert.equal(Object.keys(fishView(game,game.guesser).answers).length,2);
+});
