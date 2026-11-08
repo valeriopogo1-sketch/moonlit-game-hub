@@ -7,6 +7,7 @@ const next=(g)=>{const remaining=g.order.filter(x=>live(g,x));if(remaining.lengt
 export function setupCoup(players){if(players.length<2||players.length>6)throw Error('Coup supports 2–6 players');
  const deck=shuffle(COUP_ROLES.flatMap(role=>Array(3).fill(role)));const influence={},coins={};
  for(const p of players){influence[p.id]=[deck.pop(),deck.pop()];coins[p.id]=2;}
+ if(players.length===2)coins[players[0].id]=1;
  return {kind:'coup',phase:'playing',deck,influence,coins,order:players.map(p=>p.id),turn:0,pending:null,history:[],winner:null};
 }
 function checkPlayer(g,id){if(!live(g,id))throw Error('Player eliminated');}
@@ -15,7 +16,7 @@ function effect(g){const p=g.pending,who=p.actor,target=p.target;if(p.action==='
  if(p.action==='tax')g.coins[who]+=3;
  if(p.action==='steal'){const n=Math.min(2,g.coins[target]);g.coins[target]-=n;g.coins[who]+=n;}
  if(p.action==='exchange'){const combined=[...g.influence[who].filter(Boolean),g.deck.pop(),g.deck.pop()].filter(Boolean);g.phase='exchange';p.choices=combined;return;}
- if(p.action==='coup'||p.action==='assassinate'){g.phase='lose';p.loser=target;return;}
+ if(p.action==='coup'||p.action==='assassinate'){if(!live(g,target)){next(g);return;}g.phase='lose';p.loser=target;return;}
  g.history.push({action:p.action,actor:who,target});next(g);
 }
 function loss(g,id,index){const slots=g.influence[id];if(!Number.isInteger(index)||slots[index]===undefined||slots[index]===null)throw Error('Select a hidden card to lose');const role=slots[index];slots[index]=null;g.history.push({action:'lost',actor:id,role});return role;}
