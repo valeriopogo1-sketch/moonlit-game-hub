@@ -104,9 +104,9 @@ function renderFish(v,ctx){
    '<div class="notice">Your role: '+esc(g.role)+'. The true answer is <strong>'+esc(g.answer)+'</strong>. '+(g.role==='True Blue'?'You must submit the exact real answer.':'Invent a believable false answer.')+'</div>'+
    (g.hasAnswered?'<div class="notice">Answer submitted. Waiting for the other fish.</div>':
    (g.multipleAnswers?
-    '<div class="notice">Force Start: submit two answers. Suggested answers are editable.'+(g.role==='True Blue'?' Keep your first answer correct; your second must be fake.':' Both answers must be convincing fakes.')+'</div>'+
+    '<div class="notice">Force Start: submit '+g.answerFields.length+' answers. Suggested answers are editable.'+(g.role==='True Blue'?' Keep your first answer correct; all remaining answers must be fake.':' Both answers must be convincing fakes.')+'</div>'+
     g.answerFields.map((f,i)=>'<label class="field"><span>'+esc(f.label)+'</span><input class="input fish-answer-field" maxlength="160" data-fish-index="'+i+'" value="'+esc(f.suggestion)+'" placeholder="Edit this answer"></label>').join('')+
-    btn('Submit both answers','answer'):
+    btn('Submit '+g.answerFields.length+' answers','answer'):
     '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" placeholder="Enter your answer"></label>'+btn('Submit answer','answer')));
  }else if(g.phase==='catch'){
   controls='<p class="info">The Guesser catches suspected Red Herrings one at a time. Catching Blue ends the turn with zero Guesser points.</p>'+
