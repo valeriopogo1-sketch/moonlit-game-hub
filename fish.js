@@ -19,23 +19,33 @@ export const QUESTIONS=[
  ['What is the main ingredient in traditional hummus?','Chickpeas']
 ];
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=randomInt(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+const DECOYS=[
+ 'Emu','Mango','Flying squirrel','Atlantic Ocean','Ag','Organ','Otter','Starfish',
+ 'Asia','Gazelle','African elephant','Venus','Kyoto','Seven','Nitrogen','Lentils'
+];
+const isBot=id=>String(id).startsWith('__moonlit_decoy_');
+function prepareOptions(g){
+ const ids=shuffle(Object.keys(g.answers));
+ g.options=Object.fromEntries(ids.map((id,i)=>[String.fromCharCode(65+i),id]));
+}
 function nextQuestion(g){const [question,answer]=g.questions[g.round%g.questions.length];
  g.question=question;g.answer=answer;g.guesser=g.order[g.round%g.order.length];
  const others=g.order.filter(id=>id!==g.guesser);
  g.blue=others[randomInt(others.length)];
- g.answers={};g.flipped=[];g.phase='answer';g.last=null;g.roundPoints=0;
+ g.answers={};g.options={};g.flipped=[];g.phase='answer';g.last=null;g.roundPoints=0;
+ if(g.forced&&g.order.length===2)g.answers['__moonlit_decoy_1']=DECOYS[g.round%DECOYS.length];
 }
-export function setupFish(players){if(players.length<4||players.length>10)throw Error('Fish Frenzy bluffing supports 4–10 players');
+export function setupFish(players,{force=false}={}){if(players.length>(10)||(players.length<(force?2:4)))throw Error('Fish Frenzy requires 4–10 players normally or at least 2 with Force Start');
  const order=players.map(p=>p.id);
  if(new Set(order).size!==order.length)throw Error('Duplicate players');
- const g={kind:'fish',phase:'answer',order,round:0,maxRounds:order.length*(order.length<=5?2:1),scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(QUESTIONS),question:null,answer:null,guesser:null,blue:null,answers:{},flipped:[],winner:[],last:null,roundPoints:0};
+ const g={kind:'fish',forced:!!force,phase:'answer',order,round:0,maxRounds:order.length*(order.length<=5?2:1),scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(QUESTIONS),question:null,answer:null,guesser:null,blue:null,answers:{},flipped:[],winner:[],last:null,roundPoints:0};
  nextQuestion(g);return g;
 }
 function scoreRound(g){
  const flipped=g.flipped.length,blueFlipped=g.flipped.includes(g.blue);
- if(!blueFlipped)g.scores[g.guesser]+=flipped+(flipped===g.order.length-2?1:0);
+ if(!blueFlipped)g.scores[g.guesser]+=flipped+(flipped===Object.keys(g.answers).length-1?1:0);
  for(const id of g.order){if(id===g.guesser)continue;
-  if(id===g.blue){if(blueFlipped)g.scores[id]+=g.order.length-1-flipped;}
+  if(id===g.blue){if(blueFlipped)g.scores[id]+=Object.keys(g.answers).length-flipped;}
   else if(!g.flipped.includes(id))g.scores[id]+=flipped;
  }
  g.phase='round-results';g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:blueFlipped?0:flipped+(flipped===g.order.length-2?1:0)};
@@ -49,17 +59,17 @@ export function fishMove(g,id,a={}){
   if(!response)throw Error('Type an answer');
   if(id===g.blue&&response.toLowerCase()!==g.answer.toLowerCase())throw Error('Blue fish must submit the true answer');
   g.answers[id]=response;
-  if(Object.keys(g.answers).length===g.order.length-1)g.phase='catch';
+  if(Object.keys(g.answers).length===(g.order.length-1+(g.forced&&g.order.length===2?1:0))){prepareOptions(g);g.phase='catch';}
   return;
  }
  if(g.phase==='catch'){
   if(id!==g.guesser)throw Error('Only the Guesser can catch or bank');
   if(a.action==='bank'){scoreRound(g);return;}
   if(a.action==='catch'){
-   const target=a.target;
-   if(!Object.hasOwn(g.answers,target)||g.flipped.includes(target))throw Error('Choose a remaining answer');
+   const target=g.options[a.target];
+   if(!target||!Object.hasOwn(g.answers,target)||g.flipped.includes(target))throw Error('Choose a remaining answer');
    g.flipped.push(target);
-   if(target===g.blue||g.flipped.length===g.order.length-2)scoreRound(g);
+   if(target===g.blue||g.flipped.length===Object.keys(g.answers).length-1)scoreRound(g);
    return;
   }throw Error('Catch or bank');
  }
@@ -75,7 +85,7 @@ export function fishView(g,id){
  const reveal=g.phase==='round-results'||g.phase==='results';
  return {kind:'fish',phase:g.phase,question:g.question,answer:id===g.guesser&&!reveal?null:g.answer,
   role:id===g.guesser?'Guesser':id===g.blue?'True Blue':'Red Herring',guesser:g.guesser,
-  answers:g.phase==='answer'?Object.fromEntries(Object.entries(g.answers).map(([k])=>[k,'Submitted'])):{...g.answers},
-  flipped:[...g.flipped],scores:{...g.scores},round:g.round,maxRounds:g.maxRounds,
+  answers:g.phase==='answer'?Object.fromEntries(Object.keys(g.answers).filter(k=>!isBot(k)).map(k=>[k,'Submitted'])):Object.fromEntries(Object.entries(g.options).map(([label,key])=>[label,g.answers[key]])),
+  flipped:Object.keys(g.options).filter(label=>g.flipped.includes(g.options[label])),scores:{...g.scores},round:g.round,maxRounds:g.maxRounds,
   last:reveal?g.last:null,hasAnswered:Object.hasOwn(g.answers,id),winner:reveal?g.winner:null};
 }
