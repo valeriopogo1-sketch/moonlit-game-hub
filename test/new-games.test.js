@@ -27,7 +27,7 @@ test('Spyfall hides location from spy, permits unanimous accusation excluding su
  assert.equal(spyView(g,accuser).assignment.location,g.location);
  spyMove(g,accuser,{action:'accuse',target:spy});
  for(const id of g.order.filter(id=>id!==accuser&&id!==spy))spyMove(g,id,{action:'vote',agree:true});
- assert.equal(g.phase,'results');assert.equal(g.winner,'agents');
+ assert.equal(g.phase,'round-results');assert.equal(g.winner,'agents');
 });
 test('Spyfall wrong location guess loses; time expiration favors spy',()=>{
  const g=setupSpyfall(players);spyMove(g,g.spy,{action:'guess',location:'Not a real location'});assert.equal(g.winner,'agents');
