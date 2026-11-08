@@ -88,7 +88,7 @@ export function spyMove(g,id,a){
   }
   if(Object.keys(p.votes).length===g.order.length-1){
    const accusedSpy=p.target===g.spy;
-   finishSpy(g,accusedSpy?'agents':'spy','Unanimous accusation',accusedSpy?p.by:p.by!==null);
+   finishSpy(g,accusedSpy?'agents':'spy','Unanimous accusation',accusedSpy?p.by:true);
   }
   return;
  }
