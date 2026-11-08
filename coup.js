@@ -5,10 +5,10 @@ const shuffle=(arr)=>{const a=[...arr];for(let i=a.length-1;i>0;i--){let j=rando
 const live=(g,id)=>g.influence[id]?.some(x=>x!==null);
 const next=(g)=>{const remaining=g.order.filter(x=>live(g,x));if(remaining.length===1){g.phase='results';g.winner=remaining[0];return;}let i=0;do{g.turn=(g.turn+1)%g.order.length;i++;}while(!live(g,g.order[g.turn])&&i<=g.order.length);g.phase='playing';g.pending=null;};
 export function setupCoup(players){if(players.length<2||players.length>6)throw Error('Coup supports 2–6 players');
- const deck=shuffle(COUP_ROLES.flatMap(role=>Array(3).fill(role)));const influence={},coins={};
- for(const p of players){influence[p.id]=[deck.pop(),deck.pop()];coins[p.id]=2;}
+ const deck=shuffle(COUP_ROLES.flatMap(role=>Array(3).fill(role)));const influence={},coins={},lost={};
+ for(const p of players){influence[p.id]=[deck.pop(),deck.pop()];coins[p.id]=2;lost[p.id]=[null,null];}
  if(players.length===2)coins[players[0].id]=1;
- return {kind:'coup',phase:'playing',deck,influence,coins,order:players.map(p=>p.id),turn:0,pending:null,history:[],winner:null};
+ return {kind:'coup',phase:'playing',deck,influence,coins,lost,order:players.map(p=>p.id),turn:0,pending:null,history:[],winner:null};
 }
 function checkPlayer(g,id){if(!live(g,id))throw Error('Player eliminated');}
 function effect(g){const p=g.pending,who=p.actor,target=p.target;if(p.action==='income')g.coins[who]++;
@@ -19,7 +19,7 @@ function effect(g){const p=g.pending,who=p.actor,target=p.target;if(p.action==='
  if(p.action==='coup'||p.action==='assassinate'){if(!live(g,target)){next(g);return;}g.phase='lose';p.loser=target;return;}
  g.history.push({action:p.action,actor:who,target});next(g);
 }
-function loss(g,id,index){const slots=g.influence[id];if(!Number.isInteger(index)||slots[index]===undefined||slots[index]===null)throw Error('Select a hidden card to lose');const role=slots[index];slots[index]=null;g.history.push({action:'lost',actor:id,role});return role;}
+function loss(g,id,index){const slots=g.influence[id];if(!Number.isInteger(index)||slots[index]===undefined||slots[index]===null)throw Error('Select a hidden card to lose');const role=slots[index];slots[index]=null;g.lost[id][index]=role;g.history.push({action:'lost',actor:id,role});return role;}
 function claimResult(g,claimant,challenger,cardIndex,block){
  const p=g.pending,role=block?p.blockRole:COUP_ACTIONS[p.action];const cards=g.influence[claimant];
  if(!Number.isInteger(cardIndex)||cards[cardIndex]===null||cards[cardIndex]===undefined)throw Error('Reveal one hidden influence');
@@ -48,7 +48,7 @@ export function coupMove(g,id,a={}){
  if(g.phase==='challenge'){
   if(id===p.actor)throw Error('Other players may challenge or pass');
   if(a.action==='pass'){if(!p.passes.includes(id))p.passes.push(id);if(g.order.filter(x=>live(g,x)&&x!==p.actor).every(x=>p.passes.includes(x))){p.passes=[];g.phase=['aid','assassinate','steal'].includes(p.action)?'block':'resolving';if(g.phase==='resolving')effect(g);}return;}
-  if(a.action==='challenge'){g.phase='reveal';p.challenger=id;return;}
+  if(a.action==='challenge'){if(p.passes.includes(id))throw Error('Already passed');g.phase='reveal';p.challenger=id;return;}
   throw Error('Challenge or pass');
  }
  if(g.phase==='block'){
@@ -70,7 +70,7 @@ export function coupMove(g,id,a={}){
    p.blockPasses??=[];if(!p.blockPasses.includes(id))p.blockPasses.push(id);
    if(g.order.filter(x=>live(g,x)&&x!==p.blocker).every(x=>p.blockPasses.includes(x)))next(g);return;
   }
-  if(a.action==='challenge'){p.challenger=id;p.challengingBlock=true;g.phase='reveal';return;}
+  if(a.action==='challenge'){if(p.blockPasses.includes(id))throw Error('Already passed');p.challenger=id;p.challengingBlock=true;g.phase='reveal';return;}
   throw Error('Challenge or pass');
  }
  if(g.phase==='reveal'){
@@ -95,5 +95,5 @@ export function coupMove(g,id,a={}){
 }
 export function coupView(g,id){const pending=g.pending?{...g.pending}:null;
  if(pending){delete pending.choices;delete pending.challengeCard;if(g.phase==='exchange'&&pending.actor===id)pending.options=g.pending.choices;}
- return {kind:'coup',phase:g.phase,players:g.order.map(pid=>({id:pid,coins:g.coins[pid],cards:g.influence[pid].map(c=>c===null?null:'hidden'),revealed:g.influence[pid].map(c=>c===null?null:null),alive:live(g,pid)})),hand:g.influence[id],turnPlayer:g.order[g.turn],pending,winner:g.winner,history:g.history.slice(-10)};
+ return {kind:'coup',phase:g.phase,players:g.order.map(pid=>({id:pid,coins:g.coins[pid],cards:g.influence[pid].map(c=>c===null?null:'hidden'),revealed:g.lost[pid],alive:live(g,pid)})),hand:g.influence[id],turnPlayer:g.order[g.turn],pending,winner:g.winner,history:g.history.slice(-10)};
 }
