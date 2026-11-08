@@ -10,7 +10,7 @@ test('Fish Frenzy does not replace a focused answer input during polling',()=>{
  let html='',writes=0,focused=false;
  const app={
   get innerHTML(){return html},set innerHTML(s){html=s;writes++},
-  querySelector(sel){if(sel==='[data-fish-edit-key]'&&writes)return {dataset:{fishEditKey:'0:Which fruit?'}};return null},
+  querySelector(sel){if(sel==='[data-fish-edit-key]'&&writes)return {dataset:{fishEditKey:'FISH01:a:0:Which fruit?'},querySelector(){return {}}};return null},
   querySelectorAll(){return []}
  };
  const ctx={app,cmd(){},state:{}};
