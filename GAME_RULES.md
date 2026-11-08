@@ -66,3 +66,7 @@ Each answer appears as an anonymous shuffled Fish A/B/C/D choice without reveali
 **3 players:** True Blue submits the correct answer and one editable suggested fake; the Red Herring submits two editable suggested fake answers. The Guesser still sees four anonymous, shuffled choices.
 
 All suggestions are distinct within the same round, and the server rejects duplicate submitted answers, including those edited to match another player's answers. Easy, Medium, and Hard difficulties are supported. This is a digital house-rule adaptation rather than an official two-player Sounds Fishy rule.
+
+### Skip Question (v0.4.8)
+
+The current Guesser can press **Skip question** during Fish Frenzy's answer phase **before any answering player has submitted**. A skip replaces the question (and assigns a fresh hidden correct answer and suggestions) without awarding points, rotating the Guesser, or using a scored round. Unused questions are exhausted before the difficulty bank reshuffles; the next cycle avoids immediately repeating the previous question. Once any player submits an answer, skipping is disabled to protect submitted work. Only the Guesser may skip.
