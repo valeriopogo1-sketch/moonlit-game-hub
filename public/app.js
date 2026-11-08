@@ -21,7 +21,7 @@ async function browseRooms(){
   $('#backrooms')?.addEventListener('click',home);
   $('#newroom')?.addEventListener('click',()=>{state.gameType=state.roomsFilter==='all'?'werewolf':state.roomsFilter;entry()});
   app.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{state.roomsFilter=b.dataset.filter;browseRooms()});
-  app.querySelectorAll('[data-public-room]').forEach(b=>b.onclick=()=>{state.gameType=b.dataset.publicGame;entry();$('#roomcode').value=b.dataset.publicRoom;$('#name')?.focus();});
+  app.querySelectorAll('[data-public-room]').forEach(b=>b.onclick=()=>joinPublicRoom(b));
  }catch(e){toast('Could not load room list: '+e.message);}
 }
 function playerName(id){return state.view?.players.find(p=>p.id===id)?.name||'Unknown'}
@@ -47,6 +47,35 @@ async function refresh(){if(!state.session)return;try{state.view=await request('
 function clearSession(){state.roomsScreen=false;state.source?.close();state.source=null;state.session=null;state.view=null;sessionStorage.removeItem('moonlit_session');history.replaceState(null,'','/');}
 function subscribe(){state.source?.close();if(!state.session)return;state.source=new EventSource('/api/rooms/'+state.session.code+'/events?token='+encodeURIComponent(state.session.token));state.source.onmessage=e=>{const next=JSON.parse(e.data);if(next.event==='kicked'){clearSession();home();toast('The room owner removed you from the room.');return;}if(next.event==='left')return;if(next.phase!==state.view?.phase||next.nightRole!==state.view?.nightRole||next.needsAction!==state.view?.needsAction)state.choice=[];state.view=next;state.gameType=next.gameType;render();};state.source.onerror=()=>{state.source?.close();state.source=null;setTimeout(()=>{if(state.session){refresh();subscribe()}},4000)};}
 function poll(){setInterval(()=>{if(state.session)refresh()},2500);setInterval(()=>{if(!state.session&&state.roomsScreen&&document.visibilityState!=='hidden')browseRooms()},8000)}
+let joiningPublicRoom=false;
+async function joinPublicRoom(button){
+ if(joiningPublicRoom||state.session)return;
+ let name=(localStorage.getItem('moonlit_name')||'').trim();
+ if(name.length<2){
+  const entered=window.prompt('Choose a nickname to join this room:',name);
+  if(entered===null)return;
+  name=entered.trim();
+  if(name.length<2||name.length>22)return toast('Enter a nickname (2–22 characters)');
+ }
+ joiningPublicRoom=true;
+ button.disabled=true;
+ try{
+  const s=await request('/join',{name,code:button.dataset.publicRoom});
+  localStorage.setItem('moonlit_name',name);
+  state.gameType=button.dataset.publicGame;
+  state.roomsScreen=false;
+  state.session=s;
+  sessionStorage.setItem('moonlit_session',JSON.stringify(s));
+  state.choice=[];
+  history.replaceState(null,'','/?room='+s.code);
+  await refresh();
+  subscribe();
+ }catch(e){
+  toast(e.message);
+  button.disabled=false;
+  if(!state.session)browseRooms();
+ }finally{joiningPublicRoom=false;}
+}
 async function enter(kind){const name=$('#name')?.value.trim();if(!name||name.length<2)return toast('Enter a nickname (at least 2 characters)');localStorage.setItem('moonlit_name',name);try{const s=await request(kind==='create'?'/rooms':'/join',kind==='create'?{name,gameType:state.gameType}:{name,code:$('#roomcode').value.trim().toUpperCase()});state.roomsScreen=false;state.session=s;sessionStorage.setItem('moonlit_session',JSON.stringify(s));state.choice=[];history.replaceState(null,'','/?room='+s.code);await refresh();subscribe();}catch(e){toast(e.message)}}
 app.addEventListener('click',e=>{const el=e.target.closest('[data-screen],[data-choice],[data-mode],[data-action],#create,#join');if(!el)return;if(el.dataset.screen==='home')home();if(el.dataset.screen==='browse')browseRooms();if(el.dataset.screen==='entry'){state.gameType=el.dataset.game||'werewolf';entry();}if(el.id==='create')enter('create');if(el.id==='join')enter('join');if(el.dataset.mode){state.mode=el.dataset.mode;state.choice=[];render()}if(el.dataset.choice){const key=el.dataset.choice,limit=Number(el.dataset.limit||1);state.choice=state.choice.includes(key)?state.choice.filter(x=>x!==key):limit===1?[key]:[...state.choice,key].slice(-limit);render()}if(el.dataset.action){const type=el.dataset.action;let action={type};if(['center','player'].includes(type)){if(state.choice.length!==1)return toast('Choose one card or player first');if(type==='center')action.index=Number(state.choice[0].slice(1));else action.target=state.choice[0];}if(type==='centers'){if(state.choice.length!==2)return toast('Choose two middle cards');action.indices=state.choice.map(x=>Number(x.slice(1)));}if(type==='swap'){if(state.choice.length!==2)return toast('Choose two players');action.targets=[...state.choice];}state.choice=[];cmd('action',action)}});
 const old=(()=>{try{return JSON.parse(sessionStorage.getItem('moonlit_session'))}catch{return null}})();if(old){state.session=old;refresh().then(()=>{if(state.session)subscribe()})}else if(new URLSearchParams(location.search).has('room'))entry();else home();poll();if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
