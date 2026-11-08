@@ -40,17 +40,30 @@ function renderCoup(v,ctx){
  ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact,data={};if(a.startsWith('index:'))data.index=Number(a.split(':')[1]);else if(a.startsWith('block:')){data.action='block';data.role=a.split(':')[1];}else if(a==='exchange'){data.indices=[...ctx.app.querySelectorAll('.keep-role:checked')].map(x=>Number(x.value));}else{data.action=a;if(['coup','assassinate','steal'].includes(a))data.target=ctx.app.querySelector('#game-target')?.value;}ctx.cmd('play',data)});
 }
 function renderSpy(v,ctx){
- const g=v.table,spy=g.assignment.spy;
- let action='<p class="info">Discuss by voice or text outside this app: ask one question at a time, and do not immediately ask a follow-up question of the same person.</p>';
+ const g=v.table,spy=g.assignment.spy,me=v.you;
+ const name=id=>v.players.find(x=>x.id===id)?.name||'Unknown';
+ let action='<p class="info">Ask and answer location questions over voice chat. After replying, question a different player—not the person who asked you.</p>';
  if(g.phase==='talk'){
-  action+='<div class="label">ACCUSE A SPY</div>'+select(options(v))+btn('Propose accusation','accuse','',!g.canAccuse);
+  action+='<div class="label">PROPOSE A SPY ACCUSATION</div>'+select(options(v))+btn('Propose accusation','accuse','',!g.canAccuse);
   if(spy)action+='<div class="label">SPY MAY REVEAL AND GUESS</div><label class="field"><span>Guess the location</span><select class="input" id="location-guess">'+g.locations.map(l=>'<option value="'+esc(l)+'">'+esc(l)+'</option>').join('')+'</select></label>'+btn('Reveal and guess','guess');
- }else if(g.phase==='accusation'){
-  action='<div class="notice">Accusation: '+esc(v.players.find(x=>x.id===g.accusation.target)?.name)+' is the spy. All players except the accused must agree.</div>';
-  if(v.you!==g.accusation.target&&!Object.hasOwn(g.accusation.votes,v.you))action+=btn('Agree','yes')+btn('Disagree','no','ghost');
- }else if(g.phase==='results')action='<div class="notice">Winner: '+(g.winner==='spy'?'Spy':'Non-spies')+'. '+esc(g.reason)+'<p>Location: '+esc(g.reveal.location)+'. Spy: '+esc(v.players.find(x=>x.id===g.reveal.spy)?.name)+'</p></div>';
- ctx.app.innerHTML=head(v)+'<div class="panel"><div class="role-card"><span class="role-emoji">'+(spy?'🕵️':'📍')+'</span><h2>'+(spy?'You are the Spy':esc(g.assignment.location))+'</h2><p>'+(spy?'Listen carefully, blend in, then guess the hidden location.':'Your secret role: '+esc(g.assignment.role))+'</p></div><p class="info">Standard 8-minute round. End time: '+new Date(g.roundEnds).toLocaleTimeString()+'.</p>'+action+'</div>'+foot;
- ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='accuse')ctx.cmd('play',{action:'accuse',target:ctx.app.querySelector('#game-target')?.value});if(a==='guess')ctx.cmd('play',{action:'guess',location:ctx.app.querySelector('#location-guess')?.value});if(a==='yes'||a==='no')ctx.cmd('play',{action:'vote',agree:a==='yes'});});
+ }else if(['accusation','final-vote'].includes(g.phase)){
+  const p=g.accusation;
+  action='<div class="notice">'+(g.phase==='final-vote'?'Time is up. Final accusations are checked in order. ':'Accusation in progress. ')+'Suspect: '+esc(name(p.target))+'. All players except the suspect must agree.</div>';
+  if(me!==p.target&&!Object.hasOwn(p.votes,me))action+=btn('Agree','yes')+btn('Disagree','no','ghost');
+ }else if(['round-results','results'].includes(g.phase)){
+  action='<div class="notice">Round winner: '+(g.winner==='spy'?'Spy':'Non-spies')+'. '+esc(g.reason)+'<p>Location: '+esc(g.reveal.location)+'. Spy: '+esc(name(g.reveal.spy))+'</p></div>';
+  if(g.phase==='round-results')action+=me===v.host?btn('Start next round','next'):'<p class="info">Waiting for host to start another round.</p>';
+  else action+='<div class="notice">🏆 Overall winner(s): '+esc(g.overallWinners.map(name).join(', '))+'</div>';
+ }
+ const scores='<div class="results-list">'+v.players.map(p=>'<div class="result-row"><span>'+esc(p.name)+'</span><b>'+g.scores[p.id]+' pts</b></div>').join('')+'</div>';
+ ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">🕵️</div><div><h3>Round '+g.round+' / '+g.maxRounds+'</h3><p>Eight-minute question and answer round</p></div></div><div class="role-card"><span class="role-emoji">'+(spy?'🕵️':'📍')+'</span><h2>'+(spy?'You are the Spy':esc(g.assignment.location))+'</h2><p>'+(spy?'Blend in and guess the secret location.':'Your location role: '+esc(g.assignment.role))+'</p></div><p class="info">Round time ends at '+new Date(g.roundEnds).toLocaleTimeString()+'. Unanimous accusations exclude the suspected player. After time expires, a final accusation phase begins.</p><div class="label">SCORES</div>'+scores+action+'</div>'+foot;
+ ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{
+  const a=b.dataset.gact;
+  if(a==='accuse')ctx.cmd('play',{action:'accuse',target:ctx.app.querySelector('#game-target')?.value});
+  if(a==='guess')ctx.cmd('play',{action:'guess',location:ctx.app.querySelector('#location-guess')?.value});
+  if(a==='yes'||a==='no')ctx.cmd('play',{action:'vote',agree:a==='yes'});
+  if(a==='next')ctx.cmd('play',{action:'next'});
+ });
 }
 function renderCham(v,ctx){
  const g=v.table,me=v.you;
