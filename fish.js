@@ -33,7 +33,7 @@ function nextQuestion(g){const [question,answer]=g.questions[g.round%g.questions
  const others=g.order.filter(id=>id!==g.guesser);
  g.blue=others[randomInt(others.length)];
  g.answers={};g.options={};g.flipped=[];g.phase='answer';g.last=null;g.roundPoints=0;
- if(g.forced&&g.order.length===2)g.answers['__moonlit_decoy_1']=DECOYS[g.round%DECOYS.length];
+ if(g.forced&&g.order.length===2)g.answers['__moonlit_decoy_1']=DECOYS[QUESTIONS.findIndex(([q])=>q===question)];
 }
 export function setupFish(players,{force=false}={}){if(players.length>(10)||(players.length<(force?2:4)))throw Error('Fish Frenzy requires 4–10 players normally or at least 2 with Force Start');
  const order=players.map(p=>p.id);
@@ -48,7 +48,7 @@ function scoreRound(g){
   if(id===g.blue){if(blueFlipped)g.scores[id]+=Object.keys(g.answers).length-flipped;}
   else if(!g.flipped.includes(id))g.scores[id]+=flipped;
  }
- g.phase='round-results';g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:blueFlipped?0:flipped+(flipped===g.order.length-2?1:0)};
+ g.phase='round-results';g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:blueFlipped?0:flipped+(flipped===Object.keys(g.answers).length-1?1:0)};
 }
 export function fishMove(g,id,a={}){
  if(g.phase==='results')throw Error('Game completed');
