@@ -44,13 +44,13 @@ function renderSpy(v,ctx){
  let action='<p class="info">Discuss by voice or text outside this app: ask one question at a time, and do not immediately ask a follow-up question of the same person.</p>';
  if(g.phase==='talk'){
   action+='<div class="label">ACCUSE A SPY</div>'+select(options(v))+btn('Propose accusation','accuse','',!g.canAccuse);
-  if(spy)action+='<div class="label">SPY MAY REVEAL AND GUESS</div>'+select(g.locations.map(l=>[l,l]),'Guess the location')+btn('Reveal and guess','guess');
+  if(spy)action+='<div class="label">SPY MAY REVEAL AND GUESS</div><label class="field"><span>Guess the location</span><select class="input" id="location-guess">'+g.locations.map(l=>'<option value="'+esc(l)+'">'+esc(l)+'</option>').join('')+'</select></label>'+btn('Reveal and guess','guess');
  }else if(g.phase==='accusation'){
-  action='<div class="notice">Accusation: '+esc(v.players.find(x=>x.id===g.accusation.target)?.name)+' is the spy. All players must agree.</div>';
-  if(!Object.hasOwn(g.accusation.votes,v.you))action+=btn('Agree','yes')+btn('Disagree','no','ghost');
+  action='<div class="notice">Accusation: '+esc(v.players.find(x=>x.id===g.accusation.target)?.name)+' is the spy. All players except the accused must agree.</div>';
+  if(v.you!==g.accusation.target&&!Object.hasOwn(g.accusation.votes,v.you))action+=btn('Agree','yes')+btn('Disagree','no','ghost');
  }else if(g.phase==='results')action='<div class="notice">Winner: '+(g.winner==='spy'?'Spy':'Non-spies')+'. '+esc(g.reason)+'<p>Location: '+esc(g.reveal.location)+'. Spy: '+esc(v.players.find(x=>x.id===g.reveal.spy)?.name)+'</p></div>';
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="role-card"><span class="role-emoji">'+(spy?'🕵️':'📍')+'</span><h2>'+(spy?'You are the Spy':esc(g.assignment.location))+'</h2><p>'+(spy?'Listen carefully, blend in, then guess the hidden location.':'Your secret role: '+esc(g.assignment.role))+'</p></div><p class="info">Standard 8-minute round. End time: '+new Date(g.roundEnds).toLocaleTimeString()+'.</p>'+action+'</div>'+foot;
- ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='accuse')ctx.cmd('play',{action:'accuse',target:ctx.app.querySelector('#game-target')?.value});if(a==='guess')ctx.cmd('play',{action:'guess',location:ctx.app.querySelector('#game-target')?.value});if(a==='yes'||a==='no')ctx.cmd('play',{action:'vote',agree:a==='yes'});});
+ ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='accuse')ctx.cmd('play',{action:'accuse',target:ctx.app.querySelector('#game-target')?.value});if(a==='guess')ctx.cmd('play',{action:'guess',location:ctx.app.querySelector('#location-guess')?.value});if(a==='yes'||a==='no')ctx.cmd('play',{action:'vote',agree:a==='yes'});});
 }
 function renderCham(v,ctx){
  const g=v.table,me=v.you;
