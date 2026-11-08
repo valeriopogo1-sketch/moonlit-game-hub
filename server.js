@@ -11,7 +11,7 @@ import {setupSpyfall,spyMove,spyView,setupChameleon,chameleonMove,chameleonView,
 import {setupFish,fishMove,fishView} from './fish.js';
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'public');
 const rooms=new Map();const sessions=new Map();const streams=new Map();
-const supported={werewolf:[3,10],lines:[2,4],organs:[2,6],coup:[2,6],spyfall:[3,8],chameleon:[3,8],fish:[3,6]};
+const supported={werewolf:[3,10],lines:[2,4],organs:[2,6],coup:[2,6],spyfall:[3,8],chameleon:[3,8],fish:[4,10]};
 function roomStatus(room){if(!room.game)return room.players.length>=supported[room.gameType][1]?'full':'waiting';return room.game.phase==='results'?'finished':'playing';}
 function roomSummary(room){return {code:room.code,gameType:room.gameType,hostName:room.players.find(p=>p.id===room.host)?.name||'Host',players:room.players.length,maxPlayers:supported[room.gameType][1],status:roomStatus(room),created:room.created};}
 function publicRooms(){return [...rooms.values()].filter(room=>room.settings?.isPublic!==false).map(roomSummary).sort((a,b)=>b.created-a.created).slice(0,100);}
