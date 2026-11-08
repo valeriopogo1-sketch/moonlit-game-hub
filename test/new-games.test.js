@@ -31,7 +31,9 @@ test('Spyfall hides location from spy, permits unanimous accusation excluding su
 });
 test('Spyfall wrong location guess loses; time expiration favors spy',()=>{
  const g=setupSpyfall(players);spyMove(g,g.spy,{action:'guess',location:'Not a real location'});assert.equal(g.winner,'agents');
- const h=setupSpyfall(players);h.roundEnds=0;assert.equal(expireSpyRound(h,Date.now()),true);assert.equal(h.winner,'spy');
+ const h=setupSpyfall(players);h.roundEnds=0;assert.equal(expireSpyRound(h,Date.now()),true);assert.equal(h.phase,'final-vote');
+ for(const target of h.finalQueue){if(h.phase!=='final-vote')break;const voter=h.order.find(id=>id!==target);spyMove(h,voter,{action:'vote',agree:false});}
+ assert.equal(h.phase,'round-results');assert.equal(h.winner,'spy');
 });
 test('Chameleon enforces clockwise one-word clues and last word guess',()=>{
  const g=setupChameleon(players);assert.throws(()=>chameleonMove(g,'p1',{action:'clue',clue:'loud'}),/turn/);
@@ -56,4 +58,23 @@ test('Fish bluffing: catching the true blue gives Guesser zero points',()=>{
  const g=setupFish(players);
  for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Wrong answer'});
  fishMove(g,g.guesser,{action:'catch',target:g.blue});assert.equal(g.scores[g.guesser],0);assert.equal(g.phase,'round-results');
+});
+
+test('Spyfall awards extra points for correct unanimous accusation',()=>{
+ const g=setupSpyfall(players),spy=g.spy,accuser=g.order.find(id=>id!==spy);
+ spyMove(g,accuser,{action:'accuse',target:spy});
+ for(const id of g.order.filter(id=>id!==accuser&&id!==spy))spyMove(g,id,{action:'vote',agree:true});
+ assert.equal(g.scores[accuser],2);
+ for(const id of g.order.filter(id=>id!==accuser&&id!==spy))assert.equal(g.scores[id],1);
+ assert.equal(g.scores[spy],0);assert.equal(g.phase,'round-results');
+ spyMove(g,g.order[0],{action:'next'});assert.equal(g.round,2);assert.equal(g.phase,'talk');
+});
+test('Chameleon points carry across rounds, dealer rotates',()=>{
+ const g=setupChameleon(players),last=g.chameleon;
+ for(const id of g.order)chameleonMove(g,id,{action:'clue',clue:'Hint'});
+ for(const id of g.order)chameleonMove(g,id,{action:'vote',target:id===g.chameleon?g.order.find(p=>p!==id):g.chameleon});
+ chameleonMove(g,g.chameleon,{action:'guess',word:g.secret});
+ assert.equal(g.phase,'round-results');assert.equal(g.points[last],1);
+ chameleonMove(g,last,{action:'next'});
+ assert.equal(g.phase,'clues');assert.equal(g.dealer,last);assert.equal(g.round,2);assert.equal(g.points[last],1);
 });
