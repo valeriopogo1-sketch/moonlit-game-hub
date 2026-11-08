@@ -84,10 +84,34 @@ function prepareOptions(g){
  const ids=shuffle(Object.keys(g.answers));
  g.options=Object.fromEntries(ids.map((id,i)=>[String.fromCharCode(65+i),id]));
 }
-function suggested(g,id){
- const pool=g.currentDecoys||['Unknown','Mystery','Surprise'];
- const offset=Math.max(0,g.order.indexOf(id))%pool.length;
- return [pool[offset],pool[(offset+1)%pool.length]];
+function assignSuggestions(g){
+ const pool=shuffle((g.currentDecoys||[]).filter(x=>!same(x,g.answer)));
+ const required=(g.order.length-1)*2-1;
+ if(pool.length<required)throw Error('Not enough distinct suggestions for this question');
+ g.suggestions={};
+ let offset=0;
+ for(const id of g.order.filter(pid=>pid!==g.guesser)){
+   const count=id===g.blue?1:2;
+   g.suggestions[id]=pool.slice(offset,offset+count);
+   offset+=count;
+ }
+}
+function addAutomaticChoices(g){
+ // Two players: one correct + one editable fake from Blue, plus two anonymous fakes.
+ if(!isMulti(g)||g.order.length!==2)return;
+ const used=Object.values(g.answers);
+ const fallbacks=[
+   ...(g.currentDecoys||[]),'Banana','Elephant','Jupiter','Vienna',
+   'Tomorrow','Ocean','Volcano','Silver','Antarctica','Maple tree',
+   'Sapphire','Neptune','Satellite','Jellyfish','Zero'
+ ];
+ let i=0;
+ for(const value of fallbacks){
+   if(used.some(answer=>same(answer,value))||same(value,g.answer))continue;
+   g.answers['__decoy:'+i++]=value;used.push(value);
+   if(i===2)break;
+ }
+ if(i!==2)throw Error('Unable to generate enough different answers');
 }
 function nextQuestion(g){
  const item=g.questions[g.round%g.questions.length];
@@ -96,6 +120,7 @@ function nextQuestion(g){
  g.blue=others[randomInt(others.length)];
  g.blueKey=answerKey(g,g.blue,0);
  g.answers={};g.options={};g.flipped=[];g.submitted=[];g.phase='answer';g.last=null;
+ if(isMulti(g))assignSuggestions(g);else g.suggestions={};
 }
 export function setupFish(players,{force=false,difficulty='easy'}={}){
  if(!DIFFICULTIES.includes(difficulty))throw Error('Invalid question difficulty');
@@ -136,6 +161,7 @@ export function fishMove(g,id,a={}){
    const values=a.answers.map(normalize);
    if(values.some(x=>!x||x.length>160))throw Error('Both answers must be 1–160 characters');
    if(same(values[0],values[1]))throw Error('Answers must be different');
+   if(values.some(value=>Object.values(g.answers).some(existing=>same(value,existing))))throw Error('Answers must not duplicate other players');
    if(id===g.blue){
     if(!same(values[0],g.answer))throw Error('True Blue first answer must be correct');
     if(same(values[1],g.answer))throw Error('Suggested fake must not be the true answer');
@@ -148,7 +174,7 @@ export function fishMove(g,id,a={}){
    g.answers[id]=response;
   }
   g.submitted.push(id);
-  if(g.submitted.length===g.order.length-1){prepareOptions(g);g.phase='catch';}
+  if(g.submitted.length===g.order.length-1){addAutomaticChoices(g);prepareOptions(g);g.phase='catch';}
   return;
  }
  if(g.phase==='catch'){
@@ -177,7 +203,7 @@ export function fishMove(g,id,a={}){
 export function fishView(g,id){
  const reveal=g.phase==='round-results'||g.phase==='results';
  const role=id===g.guesser?'Guesser':id===g.blue?'True Blue':'Red Herring';
- const suggestions=suggested(g,id);
+ const suggestions=g.suggestions?.[id]||[];
  const answerFields=isMulti(g)&&id!==g.guesser&&!g.submitted.includes(id)&&g.phase==='answer'
   ?(role==='True Blue'
      ?[{label:'Correct answer',suggestion:g.answer,correct:true},{label:'Suggested fake answer',suggestion:suggestions[0],correct:false}]
