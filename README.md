@@ -6,7 +6,7 @@ A mobile-first, installable multiplayer web app with three original party games.
 
 - **Moonlit Wolves** (3–10 players): One-night hidden-role deduction, night actions, voting, and team victory checks.
 - **Five in a Row** (2–4 players): An original Sequence-style card-and-board game with a matching-symbol 8×8 board, special cards, and five-connected victory.
-- **Organ Mayhem** (2–6 players): An original attack/defend card game with four organs, strain, shields, healing, and player elimination.
+- **Organ Mayhem** (2–6 players): An original attack/defend card game with a shared 20-card unique organ deck, five-card private hands, matching afflictions, wild attacks, instant defensive cards, legal two-card discards, and last-survivor victory.
 
 These are independently styled games with original names and graphics. They are not licensed reproductions of commercial games.
 
@@ -46,3 +46,11 @@ Node.js HTTP server with Server-Sent Events for state updates, server-side actio
 ## Future
 
 Reconnect persistence, automated tests with multiple devices, timer tuning, expanded roles and cards, customizable rules, and host migration.
+
+## Organ Mayhem notes (v0.2.1)
+
+- Each organ is unique across the room, dealt face-up. Whoever receives the Wild Organ acts first.
+- Instant Guard can be played outside your normal turn. Instant Block can undo the most recent hit against you and provides a response before a lethal final hit is confirmed.
+- If you have no normal playable card, discard **one or two** selected cards and draw replacements; this consumes your turn. The discard button is disabled when a normal card is legally playable.
+- The deck has original simplified card effects. This is **not** a complete licensed edition of The Awkward Yeti's commercial OrganATTACK!, and other named special cards and expansions are not yet implemented.
+- Card games in progress on a memory-only host reset after a server restart or deployment. Start a new room after updating.
