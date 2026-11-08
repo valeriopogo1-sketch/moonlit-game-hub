@@ -42,9 +42,6 @@ function renderCoup(v,ctx){
  const players=g.players.map(x=>'<div class="result-row"><span>'+esc(v.players.find(p=>p.id===x.id)?.name)+' '+(x.alive?'':'(out)')+'</span><b>🪙 '+x.coins+' · '+x.cards.map((c,i)=>x.id===me?(g.hand[i]||x.revealed[i]||'✖'):c?'🂠':x.revealed[i]||'✖').join(', ')+'</b></div>').join('');
  const pending=p?'<div class="notice">Current action: '+esc(p.action)+' by '+esc(v.players.find(x=>x.id===p.actor)?.name)+ (p.target?' targeting '+esc(v.players.find(x=>x.id===p.target)?.name):'')+'. Phase: '+esc(phase)+'.</div>':'';
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">👑</div><div><h3>'+esc(phase==='results'?'Match finished':turn?'Your turn':v.players.find(x=>x.id===g.turnPlayer)?.name+' is acting')+'</h3><p>Last player with influence wins.</p></div></div><div class="results-list">'+players+'</div>'+pending+actions+'</div>'+foot;
- if(previous&&g.phase==='answer'&&!g.hasAnswered&&!isGuesser){
-   [...ctx.app.querySelectorAll('.fish-answer-field,#fish-answer')].forEach((input,i)=>{if(previous[i]!==undefined)input.value=previous[i];});
- }
  ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact,data={};if(a.startsWith('index:'))data.index=Number(a.split(':')[1]);else if(a.startsWith('block:')){data.action='block';data.role=a.split(':')[1];}else if(a==='exchange'){data.indices=[...ctx.app.querySelectorAll('.keep-role:checked')].map(x=>Number(x.value));}else{data.action=a;if(['coup','assassinate','steal'].includes(a))data.target=ctx.app.querySelector('#game-target')?.value;}ctx.cmd('play',data)});
 }
 function renderSpy(v,ctx){
@@ -91,18 +88,13 @@ function renderCham(v,ctx){
 }
 function renderFish(v,ctx){
  const g=v.table,me=v.you,isGuesser=g.guesser===me;
- // Polling and event-stream updates must not replace a focused input on Android:
- // replacing it dismisses the keyboard and loses unsent user edits.
- const focused=typeof document!=='undefined'?document.activeElement:null;
- if(g.phase==='answer'&&!g.hasAnswered&&!isGuesser&&
-    focused?.matches?.('.fish-answer-field,#fish-answer')&&
-    ctx.app.querySelector('[data-fish-edit-key]')?.dataset.fishEditKey===String(g.round)+':'+g.question){
-   return;
- }
- const draftKey=String(g.round)+':'+g.question;
+ // Never replace the answer input elements while the same round remains open.
+ // SSE updates and polling can fire during Android keyboard composition.
+ const draftKey=[v.code,v.you,g.round,g.question].join(':');
  const existing=ctx.app.querySelector('[data-fish-edit-key]');
- const previous=existing?.dataset.fishEditKey===draftKey
-   ?[...ctx.app.querySelectorAll('.fish-answer-field,#fish-answer')].map(input=>input.value):null;
+ if(g.phase==='answer'&&!g.hasAnswered&&!isGuesser&&
+    existing?.dataset.fishEditKey===draftKey&&
+    existing.querySelector('.fish-answer-field,#fish-answer'))return;
  const names=id=>v.players.find(x=>x.id===id)?.name||'Unknown';
  const scores=v.players.map(p=>'<div class="result-row"><span>'+esc(p.name)+'</span><b>'+g.scores[p.id]+' points</b></div>').join('');
  const answered=Object.keys(g.answers).length;
