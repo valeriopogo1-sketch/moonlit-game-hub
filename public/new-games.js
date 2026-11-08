@@ -100,7 +100,7 @@ function renderFish(v,ctx){
  const answered=Object.keys(g.answers).length;
  let controls='';
  if(g.phase==='answer'){
-  controls=isGuesser?'<div class="notice">You are the Guesser. Wait for each fish to invent or reveal their answer. You cannot see the real answer yet.</div>':
+  controls=isGuesser?'<div class="notice">You are the Guesser. Wait for the other fish to submit their answers. Already know this question? You can skip it before anyone submits an answer, without losing your turn.</div>'+(g.canSkip?btn('↪ Skip question','skip','ghost'):''):
    '<div class="notice">Your role: '+esc(g.role)+'. The true answer is <strong>'+esc(g.answer)+'</strong>. '+(g.role==='True Blue'?'You must submit the exact real answer.':'Invent a believable false answer.')+'</div>'+
    (g.hasAnswered?'<div class="notice">Answer submitted. Waiting for the other fish.</div>':
    (g.multipleAnswers?
@@ -117,6 +117,6 @@ function renderFish(v,ctx){
    (isGuesser?btn('Next round','next'):'<p class="info">Waiting for the Guesser to advance.</p>');
  }else controls='<div class="notice">Game finished! Winner(s): '+esc((g.winner||[]).map(names).join(', '))+'</div>';
  ctx.app.innerHTML=head(v)+'<div class="panel" data-fish-edit-key="'+esc(draftKey)+'"><div class="phase"><div class="phase-icon">🐠</div><div><h3>Round '+(g.round+1)+' / '+g.maxRounds+'</h3><p>Guesser: '+esc(names(g.guesser))+'</p></div></div><div class="role-card"><span class="role-emoji">🐟</span><div class="team">'+esc(g.role)+'</div><h2>'+esc(g.question)+'</h2><p>'+(isGuesser?'Find the fake answers, but avoid the true one.':'The true answer is: '+esc(g.answer))+'</p></div><div class="label">SCORES</div><div class="results-list">'+scores+'</div>'+controls+'</div>'+foot;
- ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='answer'){const fields=[...ctx.app.querySelectorAll('.fish-answer-field')];ctx.cmd('play',g.multipleAnswers?{action:'answer',answers:fields.map(f=>f.value)}:{action:'answer',answer:ctx.app.querySelector('#fish-answer')?.value});}if(a==='bank'||a==='next')ctx.cmd('play',{action:a});});
+ ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='answer'){const fields=[...ctx.app.querySelectorAll('.fish-answer-field')];ctx.cmd('play',g.multipleAnswers?{action:'answer',answers:fields.map(f=>f.value)}:{action:'answer',answer:ctx.app.querySelector('#fish-answer')?.value});}if(a==='bank'||a==='next'||a==='skip')ctx.cmd('play',{action:a});});
  ctx.app.querySelectorAll('[data-fish-catch]').forEach(b=>b.onclick=()=>ctx.cmd('play',{action:'catch',target:b.dataset.fishCatch}));
 }
