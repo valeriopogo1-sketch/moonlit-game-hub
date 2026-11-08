@@ -168,12 +168,12 @@ export function fishMove(g,id,a={}){
     if(!same(values[0],g.answer))throw Error('True Blue first answer must be correct');
     if(values.slice(1).some(value=>same(value,g.answer)))throw Error('Suggested fakes must not be the true answer');
    }else if(values.some(x=>same(x,g.answer)))throw Error('Red Herring answers must be false');
-   values.forEach((value,i)=>{g.answers[answerKey(g,id,i)]=value;});
+   values.forEach((value,i)=>{g.answers[answerKey(g,id,i)]=id===g.blue&&i===0?g.answer:value;});
   }else{
    const response=normalize(a.answer);
    if(!response||response.length>160)throw Error('Answer must be 1–160 characters');
    if(id===g.blue&&!same(response,g.answer))throw Error('Blue fish must submit the true answer');
-   g.answers[id]=response;
+   g.answers[id]=id===g.blue?g.answer:response;
   }
   g.submitted.push(id);
   if(g.submitted.length===g.order.length-1){prepareOptions(g);g.phase='catch';}
