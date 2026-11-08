@@ -58,7 +58,8 @@ export function canAct(g,id){
 }
 export function organMove(g,id,action={}){
  const {cardIndex,target,part,discard=false,discardIndices,instant=false}=action;
- if(g.phase!=='playing'||!alive(g,id))throw Error('Match finished or player eliminated');
+ if(g.phase!=='playing'&&g.phase!=='reaction')throw Error('Match finished');
+ if(!alive(g,id)&&!(g.phase==='reaction'&&id===g.reactionTarget))throw Error('Player eliminated');
  if(instant){
    if(!Number.isInteger(cardIndex)||cardIndex<0||cardIndex>=g.hands[id].length)throw Error('Select an instant card');
    const card=g.hands[id][cardIndex];
@@ -75,8 +76,13 @@ export function organMove(g,id,action={}){
      g.bodies[id][attack.part]={...attack.before};
      attack.blocked=true;use(g,id,cardIndex);
      g.last={player:id,kind:card.kind,target:id,part:attack.part};
+     if(g.phase==='reaction'){g.phase='playing';g.reactionTarget=null;advance(g);}
      return;
    }
+ }
+ if(g.phase==='reaction'){
+   if(id!==g.reactionTarget||!action.accept)throw Error('Waiting for final attack response');
+   g.phase='results';g.winner=g.order.find(p=>alive(g,p))||null;g.reactionTarget=null;return;
  }
  if(g.order[g.turn]!==id)throw Error('Not your turn');
  if(discard||Array.isArray(discardIndices)){
@@ -106,10 +112,14 @@ export function organMove(g,id,action={}){
  use(g,id,cardIndex);g.last={player:id,kind:card.kind,target,part};
  // Delay final victory if the last hit can be countered by an instant-block card.
  // Finalize at the next normal move if there are still survivors.
- if(!resolveEnd(g))advance(g);
+ const survivors=g.order.filter(p=>alive(g,p));
+ if(survivors.length<=1){
+   if(g.lastAttack&&g.hands[g.lastAttack.target]?.some(c=>c.kind==='instant_block')){g.phase='reaction';g.reactionTarget=g.lastAttack.target;}
+   else resolveEnd(g);
+ }else advance(g);
 }
 export function organView(g,id){return {
- kind:g.kind,phase:g.phase,parts:PARTS,bodies:g.bodies,hand:g.hands[id],
+ kind:g.kind,phase:g.phase,parts:PARTS,bodies:g.bodies,hand:g.hands[id],reactionTarget:g.phase==='reaction'?g.reactionTarget:null,
  handSizes:Object.fromEntries(g.order.map(p=>[p,g.hands[p].length])),
  turnPlayer:g.order[g.turn],winner:g.winner,last:g.last,
  canDiscard:g.order[g.turn]===id&&!canAct(g,id),lastAttack:g.lastAttack?.target===id&&!g.lastAttack.blocked?{part:g.lastAttack.part,from:g.lastAttack.player}:null,
