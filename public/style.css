@@ -24,3 +24,16 @@
 .organ-tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:89px;padding:8px 4px;background:#39304f;color:#eee6f9;border:1px solid #6c5685;border-radius:9px}
 .organ-tile span{font-size:24px}.organ-tile strong{font-size:11px}.organ-tile small{font-size:10px;color:#d6bfe6}.organ-tile.dead{opacity:.38;filter:grayscale(1)}
 @media(max-width:600px){.line-board{gap:2px;padding:5px}.line-square{border-radius:4px;font-size:15px}.bodies{grid-template-columns:1fr}.organ-tile{min-height:80px}}
+
+/* Public room directory, room privacy and host moderation */
+.browse-callout{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:21px 23px;margin:27px 0;background:linear-gradient(120deg,#2e254c,#24213d);border:1px solid #574570;border-radius:20px}
+.browse-callout strong{font:800 19px Outfit,sans-serif}.browse-callout p{font-size:13px;line-height:1.5;color:#bcb1d1;margin:6px 0 0}
+.browse-callout .btn{flex-shrink:0}
+.filter-tabs{margin:18px 0 22px}.filter-tabs .btn{box-shadow:none}
+.room-list{display:grid;gap:12px}
+.room-result{background:#25213a;border:1px solid #4a3d62;padding:17px 18px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.room-result h3{font:800 19px Outfit,sans-serif;margin:8px 0 0}.room-result .info{margin:7px 0 0}.room-result .btn{flex-shrink:0}
+.visibility-picker{padding:14px 0 18px;margin-top:4px;border-top:1px solid #453954}
+.visibility-picker .btn-row{margin-top:10px}
+.kick-btn{flex-shrink:0;padding:5px 8px!important;min-height:30px!important;border-color:#9b6077!important;color:#ffb5c8!important}
+@media(max-width:600px){.browse-callout{flex-direction:column;align-items:stretch}.browse-callout .btn{width:100%}.room-result{padding:14px}.room-result h3{font-size:16px}.room-result .btn{padding:9px}.kick-btn{font-size:11px!important;padding:4px 6px!important}}
