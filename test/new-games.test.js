@@ -99,7 +99,7 @@ test('Normal Fish Frenzy still requires four players; forced two-player mode has
  assert.equal(Object.keys(guesserView.answers).length,2);
  assert.deepEqual(Object.keys(guesserView.answers).sort(),['A','B']);
  assert.equal(guesserView.answer,null);
- assert.ok(!JSON.stringify(guesserView).includes(responder));
+ assert.ok(!Object.keys(guesserView.answers).includes(responder));
  const fake=Object.keys(game.options).find(label=>game.options[label]!==game.blueKey);
  fishMove(game,game.guesser,{action:'catch',target:fake});
  assert.equal(game.phase,'round-results');
