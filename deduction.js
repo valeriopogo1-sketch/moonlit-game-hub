@@ -37,14 +37,15 @@ export function spyMove(g,id,a){
   g.accused.add(id);g.phase='accusation';g.accusation={by:id,target:a.target,votes:{[id]:true}};return;
  }
  if(a.action==='vote'){
-  if(g.phase!=='accusation'||id===g.accusation.by||!g.order.includes(id))throw Error('Not eligible');
+  if(g.phase!=='accusation'||id===g.accusation.by||id===g.accusation.target||!g.order.includes(id))throw Error('Not eligible');
   if(typeof a.agree!=='boolean'||Object.hasOwn(g.accusation.votes,id))throw Error('Vote yes or no once');
   g.accusation.votes[id]=a.agree;
   if(!a.agree){g.accusation=null;g.phase='talk';return;}
-  if(Object.keys(g.accusation.votes).length===g.order.length)finishSpy(g,g.accusation.target===g.spy?'agents':'spy','Unanimous accusation');return;
+  if(Object.keys(g.accusation.votes).length===g.order.length-1)finishSpy(g,g.accusation.target===g.spy?'agents':'spy','Unanimous accusation');return;
  }
  throw Error('Invalid action');
 }
+export function expireSpyRound(g,now=Date.now()){if(g.phase==='talk'&&now>=g.roundEnds){finishSpy(g,'spy','Time expired');return true;}return false;}
 export function spyView(g,id){return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),roundEnds:g.roundEnds,accusation:g.accusation,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,reveal:g.phase==='results'?{location:g.location,spy:g.spy}:null};}
 export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:{},tie:null};}
 function settle(g,score){g.phase='results';g.winner=score?'chameleon':'group';g.points=Object.fromEntries(g.order.map(p=>[p,score?p===g.chameleon?(score===2?2:1):0:p===g.chameleon?0:2]));}
