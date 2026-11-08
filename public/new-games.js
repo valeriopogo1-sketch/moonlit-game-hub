@@ -34,7 +34,7 @@ function renderCoup(v,ctx){
    actions='<p class="info">Choose '+g.hand.filter(Boolean).length+' influence cards to keep. Select by indices from the offered cards.</p><div class="choices">'+p.options.map((r,i)=>'<label class="choice"><input type="checkbox" class="keep-role" value="'+i+'"> '+esc(r)+'</label>').join('')+'</div>'+btn('Confirm exchange','exchange');
  }
  if(phase==='results')actions='<div class="notice">🏆 '+esc(v.players.find(x=>x.id===g.winner)?.name)+' wins!</div>';
- const players=g.players.map(x=>'<div class="result-row"><span>'+esc(v.players.find(p=>p.id===x.id)?.name)+' '+(x.alive?'':'(out)')+'</span><b>🪙 '+x.coins+' · '+x.cards.map((c,i)=>x.id===me?(g.hand[i]||'✖'):c?'🂠':'✖').join(', ')+'</b></div>').join('');
+ const players=g.players.map(x=>'<div class="result-row"><span>'+esc(v.players.find(p=>p.id===x.id)?.name)+' '+(x.alive?'':'(out)')+'</span><b>🪙 '+x.coins+' · '+x.cards.map((c,i)=>x.id===me?(g.hand[i]||x.revealed[i]||'✖'):c?'🂠':x.revealed[i]||'✖').join(', ')+'</b></div>').join('');
  const pending=p?'<div class="notice">Current action: '+esc(p.action)+' by '+esc(v.players.find(x=>x.id===p.actor)?.name)+ (p.target?' targeting '+esc(v.players.find(x=>x.id===p.target)?.name):'')+'. Phase: '+esc(phase)+'.</div>':'';
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">👑</div><div><h3>'+esc(phase==='results'?'Match finished':turn?'Your turn':v.players.find(x=>x.id===g.turnPlayer)?.name+' is acting')+'</h3><p>Last player with influence wins.</p></div></div><div class="results-list">'+players+'</div>'+pending+actions+'</div>'+foot;
  ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact,data={};if(a.startsWith('index:'))data.index=Number(a.split(':')[1]);else if(a.startsWith('block:')){data.action='block';data.role=a.split(':')[1];}else if(a==='exchange'){data.indices=[...ctx.app.querySelectorAll('.keep-role:checked')].map(x=>Number(x.value));}else{data.action=a;if(['coup','assassinate','steal'].includes(a))data.target=ctx.app.querySelector('#game-target')?.value;}ctx.cmd('play',data)});
@@ -55,7 +55,8 @@ function renderSpy(v,ctx){
 function renderCham(v,ctx){
  const g=v.table,me=v.you;
  let controls='';
- if(g.phase==='clues'&&!Object.hasOwn(g.clues,me))controls='<label class="field"><span>ONE WORD CLUE</span><input class="input" maxlength="35" id="clue" placeholder="One clue word"></label>'+btn('Submit clue','clue');
+ if(g.phase==='clues'&&g.clueTurn===me&&!Object.hasOwn(g.clues,me))controls='<label class="field"><span>ONE WORD CLUE</span><input class="input" maxlength="35" id="clue" placeholder="One clue word"></label>'+btn('Submit clue','clue');
+ if(g.phase==='clues'&&g.clueTurn!==me)controls='<div class="notice">Waiting for '+esc(v.players.find(p=>p.id===g.clueTurn)?.name||'next player')+' to submit a clue. Clues are given clockwise.</div>';
  if(g.phase==='vote'&&!g.hasVoted)controls=select(options(v),'Who is the Chameleon?')+btn('Vote','vote');
  if(g.phase==='tie'&&g.dealer===me)controls=select(g.tie.map(id=>[id,v.players.find(p=>p.id===id)?.name]),'Dealer breaks tie')+btn('Choose suspect','tie');
  if(g.phase==='guess'&&g.role==='Chameleon')controls=select(g.words.map(w=>[w,w]),'Guess the secret word')+btn('Final guess','guess');
