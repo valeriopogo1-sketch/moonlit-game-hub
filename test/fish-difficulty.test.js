@@ -16,8 +16,9 @@ test('Fish Frenzy selects the correct independent question difficulty bank',()=>
   assert.ok([...seen.get(a)].every(q=>!seen.get(b).has(q)));
 });
 test('Fish Frenzy rejects unsupported difficulty',()=>assert.throws(()=>setupFish(people,{difficulty:'impossible'}),/difficulty/));
-test('Fish Frenzy Force Start retains two suggested editable answers with Hard difficulty',()=>{
+test('Fish Frenzy Force Start retains one correct and three editable suggested fakes with Hard difficulty',()=>{
  const g=setupFish(people.slice(0,2),{force:true,difficulty:'hard'});
  const id=g.order.find(x=>x!==g.guesser),v=fishView(g,id);
- assert.equal(v.answerFields.length,2);assert.ok(v.answerFields.every(f=>f.suggestion));
+ assert.equal(v.answerFields.length,4);assert.ok(v.answerFields.every(f=>f.suggestion));
+ assert.deepEqual(v.answerFields.map(f=>f.correct),[true,false,false,false]);
 });
