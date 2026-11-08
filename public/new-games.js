@@ -42,6 +42,9 @@ function renderCoup(v,ctx){
  const players=g.players.map(x=>'<div class="result-row"><span>'+esc(v.players.find(p=>p.id===x.id)?.name)+' '+(x.alive?'':'(out)')+'</span><b>🪙 '+x.coins+' · '+x.cards.map((c,i)=>x.id===me?(g.hand[i]||x.revealed[i]||'✖'):c?'🂠':x.revealed[i]||'✖').join(', ')+'</b></div>').join('');
  const pending=p?'<div class="notice">Current action: '+esc(p.action)+' by '+esc(v.players.find(x=>x.id===p.actor)?.name)+ (p.target?' targeting '+esc(v.players.find(x=>x.id===p.target)?.name):'')+'. Phase: '+esc(phase)+'.</div>':'';
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">👑</div><div><h3>'+esc(phase==='results'?'Match finished':turn?'Your turn':v.players.find(x=>x.id===g.turnPlayer)?.name+' is acting')+'</h3><p>Last player with influence wins.</p></div></div><div class="results-list">'+players+'</div>'+pending+actions+'</div>'+foot;
+ if(previous&&g.phase==='answer'&&!g.hasAnswered&&!isGuesser){
+   [...ctx.app.querySelectorAll('.fish-answer-field,#fish-answer')].forEach((input,i)=>{if(previous[i]!==undefined)input.value=previous[i];});
+ }
  ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact,data={};if(a.startsWith('index:'))data.index=Number(a.split(':')[1]);else if(a.startsWith('block:')){data.action='block';data.role=a.split(':')[1];}else if(a==='exchange'){data.indices=[...ctx.app.querySelectorAll('.keep-role:checked')].map(x=>Number(x.value));}else{data.action=a;if(['coup','assassinate','steal'].includes(a))data.target=ctx.app.querySelector('#game-target')?.value;}ctx.cmd('play',data)});
 }
 function renderSpy(v,ctx){
@@ -88,6 +91,18 @@ function renderCham(v,ctx){
 }
 function renderFish(v,ctx){
  const g=v.table,me=v.you,isGuesser=g.guesser===me;
+ // Polling and event-stream updates must not replace a focused input on Android:
+ // replacing it dismisses the keyboard and loses unsent user edits.
+ const focused=typeof document!=='undefined'?document.activeElement:null;
+ if(g.phase==='answer'&&!g.hasAnswered&&!isGuesser&&
+    focused?.matches?.('.fish-answer-field,#fish-answer')&&
+    ctx.app.querySelector('[data-fish-edit-key]')?.dataset.fishEditKey===String(g.round)+':'+g.question){
+   return;
+ }
+ const draftKey=String(g.round)+':'+g.question;
+ const existing=ctx.app.querySelector('[data-fish-edit-key]');
+ const previous=existing?.dataset.fishEditKey===draftKey
+   ?[...ctx.app.querySelectorAll('.fish-answer-field,#fish-answer')].map(input=>input.value):null;
  const names=id=>v.players.find(x=>x.id===id)?.name||'Unknown';
  const scores=v.players.map(p=>'<div class="result-row"><span>'+esc(p.name)+'</span><b>'+g.scores[p.id]+' points</b></div>').join('');
  const answered=Object.keys(g.answers).length;
@@ -109,7 +124,7 @@ function renderFish(v,ctx){
   controls='<div class="notice">Round finished. True Blue: '+esc(names(g.last.blue))+'. Correct answer: '+esc(g.last.correct)+'. The Guesser earned '+g.last.guesserPoints+' points.</div>'+
    (isGuesser?btn('Next round','next'):'<p class="info">Waiting for the Guesser to advance.</p>');
  }else controls='<div class="notice">Game finished! Winner(s): '+esc((g.winner||[]).map(names).join(', '))+'</div>';
- ctx.app.innerHTML=head(v)+'<div class="panel"><div class="phase"><div class="phase-icon">🐠</div><div><h3>Round '+(g.round+1)+' / '+g.maxRounds+'</h3><p>Guesser: '+esc(names(g.guesser))+'</p></div></div><div class="role-card"><span class="role-emoji">🐟</span><div class="team">'+esc(g.role)+'</div><h2>'+esc(g.question)+'</h2><p>'+(isGuesser?'Find the fake answers, but avoid the true one.':'The true answer is: '+esc(g.answer))+'</p></div><div class="label">SCORES</div><div class="results-list">'+scores+'</div>'+controls+'</div>'+foot;
+ ctx.app.innerHTML=head(v)+'<div class="panel" data-fish-edit-key="'+esc(draftKey)+'"><div class="phase"><div class="phase-icon">🐠</div><div><h3>Round '+(g.round+1)+' / '+g.maxRounds+'</h3><p>Guesser: '+esc(names(g.guesser))+'</p></div></div><div class="role-card"><span class="role-emoji">🐟</span><div class="team">'+esc(g.role)+'</div><h2>'+esc(g.question)+'</h2><p>'+(isGuesser?'Find the fake answers, but avoid the true one.':'The true answer is: '+esc(g.answer))+'</p></div><div class="label">SCORES</div><div class="results-list">'+scores+'</div>'+controls+'</div>'+foot;
  ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='answer'){const fields=[...ctx.app.querySelectorAll('.fish-answer-field')];ctx.cmd('play',g.multipleAnswers?{action:'answer',answers:fields.map(f=>f.value)}:{action:'answer',answer:ctx.app.querySelector('#fish-answer')?.value});}if(a==='bank'||a==='next')ctx.cmd('play',{action:a});});
  ctx.app.querySelectorAll('[data-fish-catch]').forEach(b=>b.onclick=()=>ctx.cmd('play',{action:'catch',target:b.dataset.fishCatch}));
 }
