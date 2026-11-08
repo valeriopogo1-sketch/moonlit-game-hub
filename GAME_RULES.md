@@ -53,6 +53,8 @@ New game modes use the existing guest-nickname lobby, public rooms, private room
 
 **Limitations:** In-memory rooms disappear on server restart. Live multi-device QA remains necessary. These are independent adaptations, not licensed editions, and the physical games may have additional variants, expansions, components, and editorial rulings that are not included.
 
-### Fish Frenzy Force Start (v0.4.2)
+### Fish Frenzy Force Start (v0.4.3)
 
-The room owner can use **Force Start** with **2 or 3 human players**, while the normal Start button still requires 4. With two participants, the sole answering human is True Blue and the server adds one fake answer from its original question bank. Both answers are shuffled and presented as anonymous Fish A/Fish B so the Guesser cannot identify the true answer from player names. This is a **house-rule digital adaptation**, not an official Sounds Fishy two-player rule. With three humans the game uses one human True Blue and one human Red Herring with no bot. Force Start is disabled for other games and can only be used by the room owner.
+Force Start remains available to the host with 2–3 players. In this custom house-rule mode, **every answering human submits two editable answers**. True Blue's first answer must match the correct answer and the second starts with an editable suggested fake. Each Red Herring gets two editable suggested fakes. The server validates that both answers are present, different, and that fake answers do not match the real answer.
+
+Each answer appears as an anonymous shuffled Fish A/B/C/D choice without revealing its author. **There are no longer automatic bot decoys.** The normal 4–10-player mode still asks one answer per fish. In forced games, a fake contributed by True Blue counts as a false answer for Guesser catching, whereas True Blue's winning condition depends on the correct answer being caught. Red Herring score rules apply to their surviving fake answers. The double-answer format and scoring are house rules, not the publisher's official two-player format.
