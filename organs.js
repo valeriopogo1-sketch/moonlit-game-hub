@@ -64,6 +64,7 @@ export function organMove(g,id,action={}){
    if(!Number.isInteger(cardIndex)||cardIndex<0||cardIndex>=g.hands[id].length)throw Error('Select an instant card');
    const card=g.hands[id][cardIndex];
    if(!INSTANT.has(card.kind))throw Error('This is not an instant card');
+   if(g.phase==='reaction'&&(card.kind!=='instant_block'||id!==g.reactionTarget))throw Error('Waiting for final attack defense');
    if(card.kind==='instant_guard'){
      if(target!==id)throw Error('Guard your own organ');const o=targetOrgan(g,id,part);if(o.shield)throw Error('Already protected');
      o.shield=1;use(g,id,cardIndex);g.last={player:id,kind:card.kind,target,part};return;
