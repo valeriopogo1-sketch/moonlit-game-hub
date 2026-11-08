@@ -54,3 +54,12 @@ Reconnect persistence, automated tests with multiple devices, timer tuning, expa
 - If you have no normal playable card, discard **one or two** selected cards and draw replacements; this consumes your turn. The discard button is disabled when a normal card is legally playable.
 - The deck has original simplified card effects. This is **not** a complete licensed edition of The Awkward Yeti's commercial OrganATTACK!, and other named special cards and expansions are not yet implemented.
 - Card games in progress on a memory-only host reset after a server restart or deployment. Start a new room after updating.
+
+## Room browser and host controls (v0.3.0)
+
+- Rooms are **public by default**. The home screen's **Browse Rooms** lists public waiting, full, and in-progress games, with game type, host nickname, player count, and status. Only waiting rooms have a Join button.
+- The room owner can toggle **Public** or **Private** in the waiting lobby. Private rooms can still be joined through their six-character code or invitation link but are omitted from public listings.
+- The owner can **Kick** another player while the room is waiting. Kicking immediately removes the player, revokes their guest session token, and tells their open browser that they were removed. The owner cannot kick themselves. Kicks are disabled after the game starts to prevent corruption of active matches.
+- Public lists intentionally include room codes and host display names but never expose game secrets, cards, session tokens, or hidden-role data.
+- **Limitation:** Guest-only accounts do not offer permanent bans: a removed player could rejoin with a new nickname/session or a shared invitation. Permanent blocking would require authenticated accounts or additional moderation controls.
+- All rooms still live in memory; public listings clear when the server restarts.
