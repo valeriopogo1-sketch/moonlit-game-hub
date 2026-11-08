@@ -19,34 +19,88 @@ export const TOPICS=[
 ];
 const order=players=>players.map(x=>x.id);
 function valid(players,min,max){if(players.length<min||players.length>max)throw Error('Requires '+min+'–'+max+' players');}
-export function setupSpyfall(players){valid(players,3,8);const [location,roles]=pick(LOCATIONS);const spy=pick(order(players)),assigned={};
- for(const p of players)assigned[p.id]=p.id===spy?{spy:true}:{spy:false,location,role:pick(roles)};
- return {kind:'spyfall',phase:'talk',location,spy,assigned,order:order(players),roundEnds:Date.now()+8*60000,accusation:null,accused:new Set(),winner:null,reason:null};
+function spyDeal(g){
+ const [location,roles]=pick(LOCATIONS);const spy=pick(g.order);
+ const allRoles=[...new Set([...roles,'Supervisor','Assistant','Inspector','Visitor','Technician','Coordinator','Observer','Custodian','Reporter'])];
+ const assigned={};let i=0;
+ for(const id of g.order)assigned[id]=id===spy?{spy:true}:{spy:false,location,role:allRoles[i++]};
+ g.location=location;g.spy=spy;g.assigned=assigned;g.roundEnds=Date.now()+8*60*1000;
+ g.accusation=null;g.accused=new Set();g.reason=null;g.winner=null;g.last=null;
+ g.finalQueue=[];g.finalIndex=0;g.phase='talk';
 }
-function finishSpy(g,winner,reason){g.phase='results';g.winner=winner;g.reason=reason;}
+export function setupSpyfall(players){valid(players,3,8);
+ const orderIds=order(players);
+ const g={kind:'spyfall',phase:'talk',location:null,spy:null,assigned:{},order:orderIds,round:1,maxRounds:5,
+  scores:Object.fromEntries(orderIds.map(id=>[id,0])),roundEnds:0,accusation:null,accused:new Set(),winner:null,reason:null,last:null,overallWinners:[]};
+ spyDeal(g);return g;
+}
+function finishSpy(g,winner,reason,extra=false){
+ g.winner=winner;g.reason=reason;
+ const points=Object.fromEntries(g.order.map(id=>[id,0]));
+ if(winner==='spy')points[g.spy]=extra?4:2;
+ else for(const id of g.order)if(id!==g.spy)points[id]=id===extra?2:1;
+ for(const id of g.order)g.scores[id]+=points[id];
+ g.last={location:g.location,spy:g.spy,winner,reason,points};
+ g.phase=g.round>=g.maxRounds?'results':'round-results';
+ if(g.phase==='results'){
+  const high=Math.max(...Object.values(g.scores));
+  g.overallWinners=g.order.filter(id=>g.scores[id]===high);
+ }
+}
+function beginFinalVote(g){
+ g.phase='final-vote';g.finalQueue=[...g.order.slice(1),g.order[0]];g.finalIndex=0;
+ g.accusation={by:null,target:g.finalQueue[0],votes:{}};
+}
+function finalVoteAdvance(g){
+ g.finalIndex++;
+ if(g.finalIndex>=g.finalQueue.length){finishSpy(g,'spy','No unanimous final accusation');return;}
+ g.accusation={by:null,target:g.finalQueue[g.finalIndex],votes:{}};
+}
+export function expireSpyRound(g,now=Date.now()){if(g.phase==='talk'&&now>=g.roundEnds){beginFinalVote(g);return true;}return false;}
 export function spyMove(g,id,a){
- if(g.phase==='results')throw Error('Round finished');
  if(!g.order.includes(id))throw Error('Not a player');
- if(g.phase==='talk'&&Date.now()>=g.roundEnds){finishSpy(g,'spy','Time expired');return;}
+ if(g.phase==='results')throw Error('Match finished');
+ if(g.phase==='round-results'){
+  if(id!==g.order[0]||a.action!=='next')throw Error('Host starts next Spyfall round');
+  g.round++;spyDeal(g);return;
+ }
+ if(g.phase==='talk'&&Date.now()>=g.roundEnds)beginFinalVote(g);
  if(a.action==='guess'){
-  if(id!==g.spy||g.phase!=='talk')throw Error('Only spy can guess before accusation ends');
-  finishSpy(g,a.location===g.location?'spy':'agents','Spy guessed '+(a.location===g.location?'correctly':'incorrectly'));return;
+  if(id!==g.spy||g.phase!=='talk')throw Error('Spy may guess only during timed play');
+  finishSpy(g,a.location===g.location?'spy':'agents','Spy guessed '+(a.location===g.location?'correctly':'incorrectly'),a.location===g.location);
+  return;
  }
- if(a.action==='accuse'){
-  if(g.phase!=='talk'||id===a.target||!g.order.includes(a.target)||g.accused.has(id))throw Error('Invalid accusation');
-  g.accused.add(id);g.phase='accusation';g.accusation={by:id,target:a.target,votes:{[id]:true}};return;
+ if(g.phase==='talk'){
+  if(a.action!=='accuse'||id===a.target||!g.order.includes(a.target)||g.accused.has(id))throw Error('Invalid accusation');
+  g.accused.add(id);g.phase='accusation';g.accusation={by:id,target:a.target,votes:{[id]:true}};
+  return;
  }
- if(a.action==='vote'){
-  if(g.phase!=='accusation'||id===g.accusation.by||id===g.accusation.target||!g.order.includes(id))throw Error('Not eligible');
-  if(typeof a.agree!=='boolean'||Object.hasOwn(g.accusation.votes,id))throw Error('Vote yes or no once');
-  g.accusation.votes[id]=a.agree;
-  if(!a.agree){g.accusation=null;g.phase='talk';return;}
-  if(Object.keys(g.accusation.votes).length===g.order.length-1)finishSpy(g,g.accusation.target===g.spy?'agents':'spy','Unanimous accusation');return;
+ if(g.phase==='accusation'||g.phase==='final-vote'){
+  if(a.action!=='vote')throw Error('Vote on the current suspect');
+  const p=g.accusation;
+  if(id===p.target||id===p.by||!g.order.includes(id))throw Error('Not eligible to vote');
+  if(typeof a.agree!=='boolean'||Object.hasOwn(p.votes,id))throw Error('Vote yes or no once');
+  p.votes[id]=a.agree;
+  if(!a.agree){
+   if(g.phase==='final-vote')finalVoteAdvance(g);
+   else{g.phase='talk';g.accusation=null;}
+   return;
+  }
+  if(Object.keys(p.votes).length===g.order.length-1){
+   const accusedSpy=p.target===g.spy;
+   finishSpy(g,accusedSpy?'agents':'spy','Unanimous accusation',accusedSpy?p.by:p.by!==null);
+  }
+  return;
  }
  throw Error('Invalid action');
 }
-export function expireSpyRound(g,now=Date.now()){if(g.phase==='talk'&&now>=g.roundEnds){finishSpy(g,'spy','Time expired');return true;}return false;}
-export function spyView(g,id){return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),roundEnds:g.roundEnds,accusation:g.accusation,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,reveal:g.phase==='results'?{location:g.location,spy:g.spy}:null};}
+export function spyView(g,id){
+ const finished=['round-results','results'].includes(g.phase);
+ return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),
+  roundEnds:g.roundEnds,round:g.round,maxRounds:g.maxRounds,scores:g.scores,
+  accusation:g.accusation,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,last:g.last,
+  reveal:finished?{location:g.location,spy:g.spy}:null,overallWinners:g.phase==='results'?g.overallWinners:[]};
+}
 export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clueTurn:0,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:Object.fromEntries(order(players).map(id=>[id,0])),roundPoints:{},round:1,winners:[],tie:null};}
 function settle(g,score){
  g.winner=score?'chameleon':'group';
