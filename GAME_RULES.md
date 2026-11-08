@@ -52,3 +52,7 @@ This is an independent multiplayer implementation with original names, original 
 New game modes use the existing guest-nickname lobby, public rooms, private room option, room owner kicking, invite links, server-side actions, and mobile PWA interface. All four use the existing Render-capable Node.js server.
 
 **Limitations:** In-memory rooms disappear on server restart. Live multi-device QA remains necessary. These are independent adaptations, not licensed editions, and the physical games may have additional variants, expansions, components, and editorial rulings that are not included.
+
+### Fish Frenzy Force Start (v0.4.2)
+
+The room owner can use **Force Start** with **2 or 3 human players**, while the normal Start button still requires 4. With two participants, the sole answering human is True Blue and the server adds one fake answer from its original question bank. Both answers are shuffled and presented as anonymous Fish A/Fish B so the Guesser cannot identify the true answer from player names. This is a **house-rule digital adaptation**, not an official Sounds Fishy two-player rule. With three humans the game uses one human True Blue and one human Red Herring with no bot. Force Start is disabled for other games and can only be used by the room owner.
