@@ -79,43 +79,61 @@ test('Chameleon points carry across rounds, dealer rotates',()=>{
  assert.equal(g.phase,'clues');assert.equal(g.dealer,last);assert.equal(g.round,2);assert.equal(g.points[last],1);
 });
 
-test('Fish Frenzy normal start requires four players, force start allows two',()=>{
+test('Normal Fish Frenzy still requires four players; forced two-player mode has editable suggestions',()=>{
  const two=players.slice(0,2);
  assert.throws(()=>setupFish(two),/requires 4/);
  const game=setupFish(two,{force:true});
- assert.equal(game.order.length,2);
  assert.equal(game.phase,'answer');
  const responder=two.find(p=>p.id!==game.guesser).id;
- fishMove(game,responder,{action:'answer',answer:game.answer});
+ const view=fishView(game,responder);
+ assert.equal(view.role,'True Blue');
+ assert.equal(view.answerFields.length,2);
+ assert.equal(view.answerFields[0].suggestion,game.answer);
+ assert.notEqual(view.answerFields[1].suggestion,game.answer);
+ assert.equal(view.answerFields[1].correct,false);
+ assert.equal(fishView(game,game.guesser).answerFields,null);
+ assert.throws(()=>fishMove(game,responder,{action:'answer',answers:[game.answer,game.answer]}),/different/);
+ fishMove(game,responder,{action:'answer',answers:[game.answer,'My editable fake']});
  assert.equal(game.phase,'catch');
- const guestView=fishView(game,game.guesser);
- assert.equal(Object.keys(guestView.answers).length,2);
- assert.deepEqual(Object.keys(guestView.answers).sort(),['A','B']);
- assert.equal(guestView.answer,null);
- assert.ok(!Object.keys(guestView.answers).includes(responder));
- const fake=Object.keys(game.options).find(label=>game.options[label]!==game.blue);
+ const guesserView=fishView(game,game.guesser);
+ assert.equal(Object.keys(guesserView.answers).length,2);
+ assert.deepEqual(Object.keys(guesserView.answers).sort(),['A','B']);
+ assert.equal(guesserView.answer,null);
+ assert.ok(!JSON.stringify(guesserView).includes(responder));
+ const fake=Object.keys(game.options).find(label=>game.options[label]!==game.blueKey);
  fishMove(game,game.guesser,{action:'catch',target:fake});
  assert.equal(game.phase,'round-results');
  assert.equal(game.scores[game.guesser],2);
  assert.equal(game.last.guesserPoints,2);
 });
-test('Two-player forced Fish Frenzy can rotate across all rounds',()=>{
+test('Forced two-player Fish Frenzy rotates with two answers per player',()=>{
  const game=setupFish(players.slice(0,2),{force:true});
- let seen=new Set();
+ const seen=new Set();
  while(game.phase!=='results'){
   seen.add(game.guesser);
   const human=game.order.find(id=>id!==game.guesser);
-  fishMove(game,human,{action:'answer',answer:game.answer});
+  fishMove(game,human,{action:'answer',answers:[game.answer,'Custom fake answer']});
   fishMove(game,game.guesser,{action:'bank'});
   fishMove(game,game.guesser,{action:'next'});
  }
  assert.equal(seen.size,2);
  assert.equal(game.round,game.maxRounds);
 });
-test('Fish Frenzy can force-start with three participants without bots',()=>{
+test('Forced three-player Fish Frenzy gives blue 1 correct and 1 suggested, red 2 suggested answers',()=>{
  const game=setupFish(players.slice(0,3),{force:true});
- for(const id of game.order.filter(id=>id!==game.guesser))
-  fishMove(game,id,{action:'answer',answer:id===game.blue?game.answer:'False answer'});
+ const blue=game.blue,red=game.order.find(id=>id!==game.guesser&&id!==blue);
+ const b=fishView(game,blue),r=fishView(game,red);
+ assert.equal(b.answerFields.length,2);
+ assert.deepEqual(b.answerFields.map(f=>f.correct),[true,false]);
+ assert.equal(r.answerFields.length,2);
+ assert.deepEqual(r.answerFields.map(f=>f.correct),[false,false]);
+ assert.ok(r.answerFields.every(f=>f.suggestion.length>0));
+ assert.throws(()=>fishMove(game,red,{action:'answer',answers:[game.answer,'False']}),/false/);
+ fishMove(game,blue,{action:'answer',answers:[game.answer,'Blue fake edited']});
+ fishMove(game,red,{action:'answer',answers:['Red edited one','Red edited two']});
  assert.equal(game.phase,'catch');
- assert.equal(Object.keys(fishView(game,game.guesser).answers).length,2);
+ assert.equal(Object.keys(fishView(game,game.guesser).answers).length,4);
+ const keys=Object.keys(game.options);
+ assert.equal(new Set(keys.map(k=>game.options[k])).size,4);
+ assert.equal(fishView(game,game.guesser).answer,null);
 });
