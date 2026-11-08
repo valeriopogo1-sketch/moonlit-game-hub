@@ -7,7 +7,7 @@ import {startGame,perform,castVote,closeDiscussion,publicView as wolfView} from 
 import {setupLines,lineMove,linesView} from './lines.js';
 import {setupOrgans,organMove,organView} from './organs.js';
 import {setupCoup,coupMove,coupView} from './coup.js';
-import {setupSpyfall,spyMove,spyView,setupChameleon,chameleonMove,chameleonView} from './deduction.js';
+import {setupSpyfall,spyMove,spyView,setupChameleon,chameleonMove,chameleonView,expireSpyRound} from './deduction.js';
 import {setupFish,fishMove,fishView} from './fish.js';
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'public');
 const rooms=new Map();const sessions=new Map();const streams=new Map();
@@ -64,4 +64,8 @@ async function api(req,res,url){const data=req.method==='POST'?await body(req):{
 }
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png'};
 export const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,'http://localhost');if(url.pathname.startsWith('/api/')){await api(req,res,url);return;}if(req.method!=='GET'&&req.method!=='HEAD')return error(res,405,'Method not allowed');let pathname=decodeURIComponent(url.pathname);if(pathname==='/'||!path.extname(pathname))pathname='/index.html';const file=path.resolve(root,'.'+pathname);if(!file.startsWith(root+path.sep))return error(res,403,'Forbidden');const data=await readFile(file);res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'application/octet-stream','Cache-Control':['/sw.js','/index.html','/app.js','/extra-games.js','/style.css'].includes(pathname)?'no-cache, must-revalidate':'public, max-age=3600'});res.end(req.method==='HEAD'?undefined:data);}catch(e){if(res.headersSent){res.end();return;}error(res,e.status||(e.message==='ENOENT'?404:400),e.message||'Unexpected error');}});
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){const port=Number(process.env.PORT||3000);server.listen(port,'0.0.0.0',()=>console.log('Moonlit Game Hub listening on http://localhost:'+port));}
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+ const port=Number(process.env.PORT||3000);
+ server.listen(port,'0.0.0.0',()=>console.log('Moonlit Game Hub listening on http://localhost:'+port));
+ setInterval(()=>{for(const room of rooms.values())if(room.gameType==='spyfall'&&room.game&&expireSpyRound(room.game))notify(room);},1000).unref();
+}
