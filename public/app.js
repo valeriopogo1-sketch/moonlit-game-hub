@@ -1,4 +1,4 @@
-import {renderLines,renderOrgans,gameName} from './extra-games.js?v=0.2.2';
+import {renderLines,renderOrgans,gameName} from './extra-games.js?v=0.3.0';
 const $=q=>document.querySelector(q), app=$('#app');const state={session:null,view:null,source:null,choice:[],mode:'player',remaining:300,gameType:'werewolf',pick:{},roomsFilter:'all',roomsScreen:false};const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROLES={wolf:['🐺','Shadow Wolf'],oracle:['🔮','Oracle'],thief:['🗝️','Thief'],trickster:['🎭','Trickster'],wanderer:['🍷','Wanderer'],watcher:['👁️','Watcher'],outcast:['🃏','Outcast'],villager:['🏡','Villager']};
 function toast(s){const t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),3200)}
