@@ -47,14 +47,15 @@ export function spyMove(g,id,a){
 }
 export function expireSpyRound(g,now=Date.now()){if(g.phase==='talk'&&now>=g.roundEnds){finishSpy(g,'spy','Time expired');return true;}return false;}
 export function spyView(g,id){return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),roundEnds:g.roundEnds,accusation:g.accusation,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,reveal:g.phase==='results'?{location:g.location,spy:g.spy}:null};}
-export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:{},tie:null};}
+export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clueTurn:0,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:{},tie:null};}
 function settle(g,score){g.phase='results';g.winner=score?'chameleon':'group';g.points=Object.fromEntries(g.order.map(p=>[p,score?p===g.chameleon?(score===2?2:1):0:p===g.chameleon?0:2]));}
 export function chameleonMove(g,id,a){
  if(g.phase==='results'||!g.order.includes(id))throw Error('Invalid player or finished');
  if(g.phase==='clues'){
   if(a.action!=='clue'||Object.hasOwn(g.clues,id))throw Error('Submit one clue only');
+  if(g.order[g.clueTurn]!==id)throw Error('Wait for your clue turn');
   const clue=String(a.clue||'').trim();if(!/^\S+$/.test(clue)||clue.length>35)throw Error('Clue must be one word');
-  g.clues[id]=clue;if(Object.keys(g.clues).length===g.order.length)g.phase='vote';return;
+  g.clues[id]=clue;g.clueTurn++;if(Object.keys(g.clues).length===g.order.length)g.phase='vote';return;
  }
  if(g.phase==='vote'){
   if(a.action!=='vote'||a.target===id||!g.order.includes(a.target)||Object.hasOwn(g.votes,id))throw Error('Select another player');
@@ -80,5 +81,5 @@ export function chameleonMove(g,id,a){
 }
 function resolveSuspect(g,target){g.suspect=target;g.tie=null;if(target===g.chameleon)g.phase='guess';else settle(g,2);}
 export function chameleonView(g,id){
- return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.words,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,winner:g.winner,points:g.phase==='results'?g.points:null,reveal:g.phase==='results'?{secret:g.secret,chameleon:g.chameleon}:null};
+ return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.order.length>=7&&['vote','tie'].includes(g.phase)?[]:g.words,clueTurn:g.order[g.clueTurn]||null,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,winner:g.winner,points:g.phase==='results'?g.points:null,reveal:g.phase==='results'?{secret:g.secret,chameleon:g.chameleon}:null};
 }
