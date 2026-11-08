@@ -1,28 +1,81 @@
 import {randomInt} from 'node:crypto';
-export const SPECIES=['Angel','Grouper','Trigger','Tang'];
+// Original questions, with red-herring/true-answer scoring inspired by Sounds Fishy.
+export const QUESTIONS=[
+ ['Which animal is the largest living bird?','Ostrich'],
+ ['What fruit is the main ingredient in guacamole?','Avocado'],
+ ['What animal is the only mammal capable of sustained powered flight?','Bat'],
+ ['Which ocean is the largest on Earth?','Pacific Ocean'],
+ ['What is the chemical symbol for gold?','Au'],
+ ['What instrument usually has 88 keys?','Piano'],
+ ['Which planet is famous for its large visible ring system?','Saturn'],
+ ['What sea animal has eight arms?','Octopus'],
+ ['Which continent contains the Sahara Desert?','Africa'],
+ ['What is the fastest land animal?','Cheetah'],
+ ['What is the largest mammal?','Blue whale'],
+ ['Which planet is closest to the Sun?','Mercury'],
+ ['What is the capital of Japan?','Tokyo'],
+ ['How many sides does a hexagon have?','Six'],
+ ['What gas do humans inhale to support cellular respiration?','Oxygen'],
+ ['What is the main ingredient in traditional hummus?','Chickpeas']
+];
 function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=randomInt(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
-export function setupFish(players){if(players.length<3||players.length>6)throw Error('Fish game requires 3–6 players');
- const main=[];let idx=0;
- for(const species of SPECIES){for(const size of ['small','large'])for(let n=0;n<12;n++)main.push({id:idx++,kind:'happy',species,size});for(let n=0;n<7;n++)main.push({id:idx++,kind:'hungry',species});}
- for(let n=0;n<3;n++)main.push({id:idx++,kind:'shark'});
- const water=[...Array.from({length:16},(_,i)=>({id:idx++,kind:'happy',species:SPECIES[i%4],size:i%2?'large':'small'})),...Array.from({length:4},()=>({id:idx++,kind:'net'}))];
- const order=players.map(p=>p.id),strings={},scores={},hungryScore={};for(const p of order){strings[p]=[];scores[p]=0;hungryScore[p]=0;}
- return {kind:'fish',phase:'playing',main:shuffle(main),water:shuffle(water),order,turn:0,strings,scores,hungryScore,pools:{},winner:null,last:null,drawCount:0};
+function nextQuestion(g){const [question,answer]=g.questions[g.round%g.questions.length];
+ g.question=question;g.answer=answer;g.guesser=g.order[g.round%g.order.length];
+ const others=g.order.filter(id=>id!==g.guesser);
+ g.blue=others[randomInt(others.length)];
+ g.answers={};g.flipped=[];g.phase='answer';g.last=null;g.roundPoints=0;
 }
-const next=g=>{g.turn=(g.turn+1)%g.order.length;};
-function addToString(g,id,card){const string=g.strings[id],end=string.at(-1);if(!end||end.species===card.species||end.size===card.size){string.push(card);return true;}return false;}
-function takePool(g,id){for(const species of SPECIES){if(g.strings[id].filter(c=>c.species===species).length>=3&&g.pools[species]?.length){g.scores[id]+=g.pools[species].length;g.hungryScore[id]++;delete g.pools[species];next(g);return true;}}return false;}
-function winner(g){const scores=Object.entries(g.scores);const best=Math.max(...scores.map(x=>x[1]));const ties=scores.filter(x=>x[1]===best);const high=Math.max(...ties.map(x=>g.hungryScore[x[0]]));const final=ties.filter(x=>g.hungryScore[x[0]]===high);g.phase='results';g.winner=final.map(x=>x[0]);}
-export function fishMove(g,id,a={}){if(g.phase!=='playing'||g.order[g.turn]!==id)throw Error('Not your turn');
- if(a.action==='bank'){g.scores[id]+=g.strings[id].length;g.strings[id]=[];g.last={action:'bank',id};next(g);return;}
- if(a.action!=='draw')throw Error('Draw or bank');
- const card=(g.main.length?g.main:g.water).pop();if(!card){winner(g);return;}g.drawCount++;g.last={action:'draw',id,card};
- if(card.kind==='net'){winner(g);return;}
- if(card.kind==='shark'){g.strings[id]=[];next(g);return;}
- if(card.kind==='hungry'){const s=g.strings[id],eaten=[];while(s.length&&s.at(-1).species!==card.species)eaten.push(s.pop());
- if(eaten.length)g.pools[card.species]=[card,...eaten];next(g);return;}
- let added=false;for(let i=0;i<g.order.length;i++){const target=g.order[(g.turn+i)%g.order.length];if(addToString(g,target,card)){added=true;g.last.to=target;break;}}
- if(!added)g.last.to=null;
- if(takePool(g,id))return;
+export function setupFish(players){if(players.length<4||players.length>10)throw Error('Fish Frenzy bluffing supports 4–10 players');
+ const order=players.map(p=>p.id);
+ if(new Set(order).size!==order.length)throw Error('Duplicate players');
+ const g={kind:'fish',phase:'answer',order,round:0,maxRounds:order.length*(order.length<=5?2:1),scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(QUESTIONS),question:null,answer:null,guesser:null,blue:null,answers:{},flipped:[],winner:[],last:null,roundPoints:0};
+ nextQuestion(g);return g;
 }
-export function fishView(g,id){return {kind:'fish',phase:g.phase,strings:g.strings,scores:g.scores,hungryScore:g.hungryScore,turnPlayer:g.order[g.turn],pools:Object.fromEntries(Object.entries(g.pools).map(([k,v])=>[k,v.length])),last:g.last,remaining:g.main.length+g.water.length,winner:g.winner};}
+function scoreRound(g){
+ const flipped=g.flipped.length,blueFlipped=g.flipped.includes(g.blue);
+ if(!blueFlipped)g.scores[g.guesser]+=flipped+(flipped===g.order.length-2?1:0);
+ for(const id of g.order){if(id===g.guesser)continue;
+  if(id===g.blue){if(blueFlipped)g.scores[id]+=g.order.length-1-flipped;}
+  else if(!g.flipped.includes(id))g.scores[id]+=flipped;
+ }
+ g.phase='round-results';g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:blueFlipped?0:flipped+(flipped===g.order.length-2?1:0)};
+}
+export function fishMove(g,id,a={}){
+ if(g.phase==='results')throw Error('Game completed');
+ if(!g.order.includes(id))throw Error('Player not in game');
+ if(g.phase==='answer'){
+  if(id===g.guesser||a.action!=='answer'||Object.hasOwn(g.answers,id))throw Error('Not eligible to answer');
+  const response=String(a.answer||'').trim().slice(0,160);
+  if(!response)throw Error('Type an answer');
+  if(id===g.blue&&response.toLowerCase()!==g.answer.toLowerCase())throw Error('Blue fish must submit the true answer');
+  g.answers[id]=response;
+  if(Object.keys(g.answers).length===g.order.length-1)g.phase='catch';
+  return;
+ }
+ if(g.phase==='catch'){
+  if(id!==g.guesser)throw Error('Only the Guesser can catch or bank');
+  if(a.action==='bank'){scoreRound(g);return;}
+  if(a.action==='catch'){
+   const target=a.target;
+   if(!Object.hasOwn(g.answers,target)||g.flipped.includes(target))throw Error('Choose a remaining answer');
+   g.flipped.push(target);
+   if(target===g.blue||g.flipped.length===g.order.length-2)scoreRound(g);
+   return;
+  }throw Error('Catch or bank');
+ }
+ if(g.phase==='round-results'){
+  if(id!==g.guesser||a.action!=='next')throw Error('Guesser advances to next round');
+  g.round++;
+  if(g.round>=g.maxRounds){g.phase='results';const max=Math.max(...Object.values(g.scores));g.winner=g.order.filter(id=>g.scores[id]===max);}else nextQuestion(g);
+  return;
+ }
+ throw Error('Invalid phase');
+}
+export function fishView(g,id){
+ const reveal=g.phase==='round-results'||g.phase==='results';
+ return {kind:'fish',phase:g.phase,question:g.question,answer:id===g.guesser&&!reveal?null:g.answer,
+  role:id===g.guesser?'Guesser':id===g.blue?'True Blue':'Red Herring',guesser:g.guesser,
+  answers:g.phase==='answer'?Object.fromEntries(Object.entries(g.answers).map(([k])=>[k,'Submitted'])):{...g.answers},
+  flipped:[...g.flipped],scores:{...g.scores},round:g.round,maxRounds:g.maxRounds,
+  last:reveal?g.last:null,hasAnswered:Object.hasOwn(g.answers,id),winner:reveal?g.winner:null};
+}
