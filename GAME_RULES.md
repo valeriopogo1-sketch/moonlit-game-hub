@@ -55,10 +55,14 @@ New game modes use the existing guest-nickname lobby, public rooms, private room
 
 ### Fish Frenzy Force Start (v0.4.3)
 
-Force Start remains available to the host with 2–3 players. In this custom house-rule mode, **every answering human submits two editable answers**. True Blue's first answer must match the correct answer and the second starts with an editable suggested fake. Each Red Herring gets two editable suggested fakes. The server validates that both answers are present, different, and that fake answers do not match the real answer.
+Force Start remains available to the host with 2–3 players. In this custom house-rule mode, answer counts depend on player count (see Current Force Start rules below). True Blue's first answer must match the correct answer; other answers must be fake. Each Red Herring gets two editable suggested fakes. The server validates the required number of answers, uniqueness, and that fake answers do not match the real answer.
 
-Each answer appears as an anonymous shuffled Fish A/B/C/D choice without revealing its author. **There are no longer automatic bot decoys.** The normal 4–10-player mode still asks one answer per fish. In forced games, a fake contributed by True Blue counts as a false answer for Guesser catching, whereas True Blue's winning condition depends on the correct answer being caught. Red Herring score rules apply to their surviving fake answers. The double-answer format and scoring are house rules, not the publisher's official two-player format.
+Each answer appears as an anonymous shuffled Fish A/B/C/D choice without revealing its author. **There are no automatic bot decoys.** The normal 4–10-player mode still asks one answer per fish. In forced games, a fake contributed by True Blue counts as a false answer for Guesser catching, whereas True Blue's winning condition depends on the correct answer being caught. Red Herring score rules apply to their surviving fake answers. The double-answer format and scoring are house rules, not the publisher's official two-player format.
 
-### Forced rounds — minimum four choices (v0.4.6)
+### Current Force Start rules (v0.4.7)
 
-In two-player Force Start, the non-Guesser (True Blue) sees the fixed correct answer and one editable suggested bluff. The server adds **two different anonymous fake answers**, making four shuffled choices. With three people, True Blue gets the correct answer plus one editable suggested fake, and the Red Herring gets two editable suggested fakes. Suggestions are allocated without repeats across players; duplicate submitted answers (case- and whitespace-insensitive) are rejected so players must change a conflicting edit. Both players' bluff fields remain editable. This is a house-rule extension, not a claim about official Sounds Fishy rules.
+**2 players:** The non-Guesser is True Blue and enters **four answers**: the fixed correct answer and **three separately editable, suggested fake answers**. All four answers are submitted by that player; no automatic fake choices are added. The Guesser sees four anonymous, shuffled answers.
+
+**3 players:** True Blue submits the correct answer and one editable suggested fake; the Red Herring submits two editable suggested fake answers. The Guesser still sees four anonymous, shuffled choices.
+
+All suggestions are distinct within the same round, and the server rejects duplicate submitted answers, including those edited to match another player's answers. Easy, Medium, and Hard difficulties are supported. This is a digital house-rule adaptation rather than an official two-player Sounds Fishy rule.
