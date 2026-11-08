@@ -1,6 +1,6 @@
 import {randomInt} from 'node:crypto';
-// Original question bank. Force Start (2–3 people) uses two editable answers
-// per answering player; normal 4–10 player rounds retain one answer per player.
+// Two-player Force Start: one correct and three editable fakes.
+// Three-player Force Start: two answers per responder. Normal: one.
 export const QUESTIONS=[
  ['Which animal is the largest living bird?','Ostrich'],
  ['What fruit is the main ingredient in guacamole?','Avocado'],
@@ -86,32 +86,15 @@ function prepareOptions(g){
 }
 function assignSuggestions(g){
  const pool=shuffle((g.currentDecoys||[]).filter(x=>!same(x,g.answer)));
- const required=(g.order.length-1)*2-1;
+ const required=g.order.length===2?3:(g.order.length-1)*2-1;
  if(pool.length<required)throw Error('Not enough distinct suggestions for this question');
  g.suggestions={};
  let offset=0;
  for(const id of g.order.filter(pid=>pid!==g.guesser)){
-   const count=id===g.blue?1:2;
+   const count=id===g.blue?(g.order.length===2?3:1):2;
    g.suggestions[id]=pool.slice(offset,offset+count);
    offset+=count;
  }
-}
-function addAutomaticChoices(g){
- // Two players: one correct + one editable fake from Blue, plus two anonymous fakes.
- if(!isMulti(g)||g.order.length!==2)return;
- const used=Object.values(g.answers);
- const fallbacks=[
-   ...(g.currentDecoys||[]),'Banana','Elephant','Jupiter','Vienna',
-   'Tomorrow','Ocean','Volcano','Silver','Antarctica','Maple tree',
-   'Sapphire','Neptune','Satellite','Jellyfish','Zero'
- ];
- let i=0;
- for(const value of fallbacks){
-   if(used.some(answer=>same(answer,value))||same(value,g.answer))continue;
-   g.answers['__decoy:'+i++]=value;used.push(value);
-   if(i===2)break;
- }
- if(i!==2)throw Error('Unable to generate enough different answers');
 }
 function nextQuestion(g){
  const item=g.questions[g.round%g.questions.length];
@@ -157,14 +140,15 @@ export function fishMove(g,id,a={}){
  if(g.phase==='answer'){
   if(id===g.guesser||a.action!=='answer'||g.submitted.includes(id))throw Error('Not eligible to answer');
   if(isMulti(g)){
-   if(!Array.isArray(a.answers)||a.answers.length!==2)throw Error('Submit exactly two answers');
+   const required=g.order.length===2?4:2;
+   if(!Array.isArray(a.answers)||a.answers.length!==required)throw Error('Submit exactly '+required+' answers');
    const values=a.answers.map(normalize);
-   if(values.some(x=>!x||x.length>160))throw Error('Both answers must be 1–160 characters');
-   if(same(values[0],values[1]))throw Error('Answers must be different');
+   if(values.some(x=>!x||x.length>160))throw Error('Every answer must be 1–160 characters');
+   if(new Set(values.map(value=>value.toLocaleLowerCase())).size!==values.length)throw Error('Answers must be different');
    if(values.some(value=>Object.values(g.answers).some(existing=>same(value,existing))))throw Error('Answers must not duplicate other players');
    if(id===g.blue){
     if(!same(values[0],g.answer))throw Error('True Blue first answer must be correct');
-    if(same(values[1],g.answer))throw Error('Suggested fake must not be the true answer');
+    if(values.slice(1).some(value=>same(value,g.answer)))throw Error('Suggested fakes must not be the true answer');
    }else if(values.some(x=>same(x,g.answer)))throw Error('Red Herring answers must be false');
    values.forEach((value,i)=>{g.answers[answerKey(g,id,i)]=value;});
   }else{
@@ -174,7 +158,7 @@ export function fishMove(g,id,a={}){
    g.answers[id]=response;
   }
   g.submitted.push(id);
-  if(g.submitted.length===g.order.length-1){addAutomaticChoices(g);prepareOptions(g);g.phase='catch';}
+  if(g.submitted.length===g.order.length-1){prepareOptions(g);g.phase='catch';}
   return;
  }
  if(g.phase==='catch'){
@@ -206,7 +190,7 @@ export function fishView(g,id){
  const suggestions=g.suggestions?.[id]||[];
  const answerFields=isMulti(g)&&id!==g.guesser&&!g.submitted.includes(id)&&g.phase==='answer'
   ?(role==='True Blue'
-     ?[{label:'Correct answer',suggestion:g.answer,correct:true},{label:'Suggested fake answer',suggestion:suggestions[0],correct:false}]
+     ?[{label:'Correct answer',suggestion:g.answer,correct:true},...suggestions.map((suggestion,i)=>({label:g.order.length===2?'Suggested fake answer '+(i+1):'Suggested fake answer',suggestion,correct:false}))]
      :[{label:'Suggested fake answer 1',suggestion:suggestions[0],correct:false},{label:'Suggested fake answer 2',suggestion:suggestions[1],correct:false}])
   :null;
  return {kind:'fish',forced:g.forced,difficulty:g.difficulty,multipleAnswers:isMulti(g),phase:g.phase,
