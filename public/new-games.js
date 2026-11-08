@@ -8,10 +8,15 @@ const select=(options,label='Choose player')=>'<label class="field"><span>'+esc(
 const options=v=>v.players.filter(p=>p.id!==v.you).map(p=>[p.id,p.name]);
 const player=v=>v.players.find(p=>p.id===v.you)?.name||'Player';
 export function renderAdditional(v,ctx){
- if(v.gameType==='coup')return renderCoup(v,ctx);
- if(v.gameType==='spyfall')return renderSpy(v,ctx);
- if(v.gameType==='chameleon')return renderCham(v,ctx);
- return renderFish(v,ctx);
+ if(v.gameType==='coup')renderCoup(v,ctx);
+ else if(v.gameType==='spyfall')renderSpy(v,ctx);
+ else if(v.gameType==='chameleon')renderCham(v,ctx);
+ else renderFish(v,ctx);
+ if(v.table?.phase==='results'&&v.you===v.host){
+  const panel=ctx.app.querySelector('.panel');
+  panel?.insertAdjacentHTML('beforeend','<button class="btn full" id="new-game-rematch">↻ Return to lobby for rematch</button>');
+  ctx.app.querySelector('#new-game-rematch')?.addEventListener('click',()=>ctx.cmd('rematch'));
+ }
 }
 function renderCoup(v,ctx){
  const g=v.table,p=g.pending,me=v.you,turn=g.turnPlayer===me,phase=g.phase,opp=options(v);
