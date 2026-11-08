@@ -104,10 +104,10 @@ function renderFish(v,ctx){
    '<div class="notice">Your role: '+esc(g.role)+'. The true answer is <strong>'+esc(g.answer)+'</strong>. '+(g.role==='True Blue'?'You must submit the exact real answer.':'Invent a believable false answer.')+'</div>'+
    (g.hasAnswered?'<div class="notice">Answer submitted. Waiting for the other fish.</div>':
    (g.multipleAnswers?
-    '<div class="notice">Force Start: submit '+g.answerFields.length+' answers. Suggested answers are editable.'+(g.role==='True Blue'?' Keep your first answer correct; all remaining answers must be fake.':' Both answers must be convincing fakes.')+'</div>'+
-    g.answerFields.map((f,i)=>'<label class="field"><span>'+esc(f.label)+'</span><input class="input fish-answer-field" maxlength="160" data-fish-index="'+i+'" value="'+esc(f.suggestion)+'" placeholder="Edit this answer"></label>').join('')+
+    '<div class="notice">Force Start: submit '+g.answerFields.length+' answers. The correct answer is locked; suggested fake answers remain editable.'+(g.role==='True Blue'?' The first answer is fixed as the real answer.':' Both answers must be convincing fakes.')+'</div>'+
+    g.answerFields.map((f,i)=>'<label class="field"><span>'+esc(f.label)+(f.correct?' (locked)':'')+'</span><input class="input fish-answer-field" maxlength="160" data-fish-index="'+i+'" value="'+esc(f.suggestion)+'" '+(f.correct?'readonly aria-readonly="true"':'')+' placeholder="'+(f.correct?'Correct answer':'Edit this answer')+'"></label>').join('')+
     btn('Submit '+g.answerFields.length+' answers','answer'):
-    '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" placeholder="Enter your answer"></label>'+btn('Submit answer','answer')));
+    '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" '+(g.role==='True Blue'?'readonly aria-readonly="true"':'')+' placeholder="'+(g.role==='True Blue'?'Correct answer (locked)':'Enter your answer')+'"></label>'+btn('Submit answer','answer')));
  }else if(g.phase==='catch'){
   controls='<p class="info">The Guesser catches suspected Red Herrings one at a time. Catching Blue ends the turn with zero Guesser points.</p>'+
    '<div class="results-list">'+Object.entries(g.answers).map(([id,response])=>'<div class="result-row"><div><span>Fish '+esc(id)+'</span><p class="info">'+esc(response)+'</p></div><div>'+(g.flipped.includes(id)?'<span class="tag">FLIPPED</span>':isGuesser?'<button class="btn small" data-fish-catch="'+esc(id)+'">Catch 🐟</button>':'<span class="tiny">Hidden</span>')+'</div></div>').join('')+'</div>'+
