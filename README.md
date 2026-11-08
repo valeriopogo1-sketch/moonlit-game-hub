@@ -1,14 +1,20 @@
 # Moonlit Game Hub
 
-A mobile-first, installable multiplayer web app with three original party games.
+A mobile-first, installable multiplayer web app with **seven** original-style party games.
 
 ## Games
 
 - **Moonlit Wolves** (3–10 players): One-night hidden-role deduction, night actions, voting, and team victory checks.
 - **Five in a Row** (2–4 players): An original Sequence-style card-and-board game with a matching-symbol 8×8 board, special cards, and five-connected victory.
 - **Organ Mayhem** (2–6 players): An original attack/defend card game with a shared 20-card unique organ deck, five-card private hands, matching afflictions, wild attacks, instant defensive cards, legal two-card discards, and last-survivor victory.
+- **Court of Bluffs** (Coup-style; 2–6 players): Influence, coins, Duke/Assassin/Captain/Ambassador/Contessa, bluffs, challenges, counteractions, and elimination.
+- **Secret Location** (Spyfall-style; 3–8 players): Secret spy/location roles, eight-minute rounds, accusations, final voting and five-round scoring.
+- **Hidden Word** (Chameleon-style; 3–8 players): Secret word, one-word clues, voting, guesses, cumulative points to five.
+- **Fish Frenzy** (Sounds Fishy-style; 4–10 players): One true answer, fake answers, sequential catch/bank actions and scoring.
 
 These are independently styled games with original names and graphics. They are not licensed reproductions of commercial games.
+
+See [GAME_RULES.md](GAME_RULES.md) for the verified source references, full action lists, scoring variants and limitations. **Fish Frenzy currently assumes that “Something Fishy” means the bluffing game Sounds Fishy;** if you meant the separate 2004 fish-collecting game, that needs a different rule engine.
 
 ## Run locally
 
