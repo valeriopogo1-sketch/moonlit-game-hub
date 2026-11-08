@@ -172,3 +172,60 @@ test('Forced two-player match always displays four nonduplicate shuffled answers
   assert.equal(Object.values(choiceView.answers).filter(s=>s===game.answer).length,1);
  }
 });
+
+test('Fish Frenzy Guesser can skip familiar questions without scoring or advancing round',()=>{
+ for(const difficulty of ['easy','medium','hard']){
+  const g=setupFish(players.slice(0,2),{force:true,difficulty});
+  const first=g.question,answer=g.answer,guesser=g.guesser;
+  const originalScores={...g.scores},originalRound=g.round;
+  assert.equal(fishView(g,guesser).canSkip,true);
+  assert.throws(()=>fishMove(g,g.blue,{action:'skip'}),/Only the Guesser/);
+  fishMove(g,guesser,{action:'skip'});
+  assert.notEqual(g.question,first);
+  assert.equal(g.round,originalRound);
+  assert.equal(g.guesser,guesser);
+  assert.deepEqual(g.scores,originalScores);
+  assert.equal(g.skippedQuestions,1);
+  assert.equal(g.phase,'answer');
+  assert.equal(g.submitted.length,0);
+  assert.equal(Object.keys(g.answers).length,0);
+  assert.equal(fishView(g,guesser).answer,null);
+  assert.notEqual(g.answer,undefined);
+  assert.equal(fishView(g,guesser).canSkip,true);
+ }
+});
+test('Fish Frenzy skip is rejected after answers submitted and after catch phase',()=>{
+ const g=setupFish(players.slice(0,3),{force:true});
+ const guesser=g.guesser,responders=g.order.filter(id=>id!==guesser);
+ const blue=g.blue,red=responders.find(id=>id!==blue);
+ const blueFields=fishView(g,blue).answerFields;
+ fishMove(g,blue,{action:'answer',answers:[g.answer,blueFields[1].suggestion]});
+ assert.equal(fishView(g,guesser).canSkip,false);
+ const before=g.question;
+ assert.throws(()=>fishMove(g,guesser,{action:'skip'}),/Cannot skip/);
+ assert.equal(g.question,before);
+ const redFields=fishView(g,red).answerFields;
+ fishMove(g,red,{action:'answer',answers:redFields.map(f=>f.suggestion)});
+ assert.equal(g.phase,'catch');
+ assert.throws(()=>fishMove(g,guesser,{action:'skip'}),/Catch or bank/);
+});
+test('Fish Frenzy skips every question without immediate repeats and continues playing',()=>{
+ const g=setupFish(players.slice(0,2),{force:true,difficulty:'hard'});
+ const seen=new Set([g.question]);
+ const initial=g.question;
+ for(let i=1;i<g.questions.length;i++){
+  fishMove(g,g.guesser,{action:'skip'});
+  assert.equal(seen.has(g.question),false);
+  seen.add(g.question);
+ }
+ assert.equal(seen.size,g.questions.length);
+ fishMove(g,g.guesser,{action:'skip'});
+ assert.notEqual(g.question,[...seen].at(-1));
+ assert.equal(g.round,0);
+ assert.equal(g.skippedQuestions,g.questions.length);
+ const blue=g.blue;
+ const fields=fishView(g,blue).answerFields;
+ fishMove(g,blue,{action:'answer',answers:fields.map(f=>f.suggestion)});
+ fishMove(g,g.guesser,{action:'bank'});
+ assert.equal(g.phase,'round-results');
+});
