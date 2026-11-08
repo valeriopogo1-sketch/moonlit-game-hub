@@ -37,3 +37,6 @@
 .visibility-picker .btn-row{margin-top:10px}
 .kick-btn{flex-shrink:0;padding:5px 8px!important;min-height:30px!important;border-color:#9b6077!important;color:#ffb5c8!important}
 @media(max-width:600px){.browse-callout{flex-direction:column;align-items:stretch}.browse-callout .btn{width:100%}.room-result{padding:14px}.room-result h3{font-size:16px}.room-result .btn{padding:9px}.kick-btn{font-size:11px!important;padding:4px 6px!important}}
+
+/* Minimum player requirement on each game card */
+.game-player-count{display:flex;align-items:center;gap:6px;color:#c7b8ea;font-weight:700;font-size:12px;margin:0 0 12px}
