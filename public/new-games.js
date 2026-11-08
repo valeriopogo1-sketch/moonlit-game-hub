@@ -99,7 +99,7 @@ function renderFish(v,ctx){
    '<label class="field"><span>YOUR ANSWER</span><input class="input" maxlength="160" id="fish-answer" value="'+esc(g.role==='True Blue'?g.answer:'')+'" placeholder="Enter your answer"></label>'+btn('Submit answer','answer'));
  }else if(g.phase==='catch'){
   controls='<p class="info">The Guesser catches suspected Red Herrings one at a time. Catching Blue ends the turn with zero Guesser points.</p>'+
-   '<div class="results-list">'+Object.entries(g.answers).map(([id,response])=>'<div class="result-row"><div><span>'+esc(names(id))+'</span><p class="info">'+esc(response)+'</p></div><div>'+(g.flipped.includes(id)?'<span class="tag">FLIPPED</span>':isGuesser?'<button class="btn small" data-fish-catch="'+esc(id)+'">Catch 🐟</button>':'<span class="tiny">Hidden</span>')+'</div></div>').join('')+'</div>'+
+   '<div class="results-list">'+Object.entries(g.answers).map(([id,response])=>'<div class="result-row"><div><span>Fish '+esc(id)+'</span><p class="info">'+esc(response)+'</p></div><div>'+(g.flipped.includes(id)?'<span class="tag">FLIPPED</span>':isGuesser?'<button class="btn small" data-fish-catch="'+esc(id)+'">Catch 🐟</button>':'<span class="tiny">Hidden</span>')+'</div></div>').join('')+'</div>'+
    (isGuesser?btn('Bank and end turn','bank','ghost'):'<div class="notice">Waiting for the Guesser to catch or bank.</div>');
  }else if(g.phase==='round-results'){
   controls='<div class="notice">Round finished. True Blue: '+esc(names(g.last.blue))+'. Correct answer: '+esc(g.last.correct)+'. The Guesser earned '+g.last.guesserPoints+' points.</div>'+
