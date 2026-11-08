@@ -50,14 +50,14 @@ test('Fish bluffing: exactly one true blue; red catches bank points',()=>{
  for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Invented false answer'});
  assert.equal(g.phase,'catch');assert.equal(fishView(g,g.guesser).answer,null);
  const red=g.order.find(id=>id!==g.guesser&&id!==g.blue);
- fishMove(g,g.guesser,{action:'catch',target:red});fishMove(g,g.guesser,{action:'bank'});
+ fishMove(g,g.guesser,{action:'catch',target:Object.keys(g.options).find(k=>g.options[k]===red)});fishMove(g,g.guesser,{action:'bank'});
  assert.equal(g.phase,'round-results');assert.equal(g.scores[g.guesser],1);assert.equal(fishView(g,g.guesser).answer,g.answer);
  fishMove(g,g.guesser,{action:'next'});assert.equal(g.round,1);
 });
 test('Fish bluffing: catching the true blue gives Guesser zero points',()=>{
  const g=setupFish(players);
  for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Wrong answer'});
- fishMove(g,g.guesser,{action:'catch',target:g.blue});assert.equal(g.scores[g.guesser],0);assert.equal(g.phase,'round-results');
+ fishMove(g,g.guesser,{action:'catch',target:Object.keys(g.options).find(k=>g.options[k]===g.blue)});assert.equal(g.scores[g.guesser],0);assert.equal(g.phase,'round-results');
 });
 
 test('Spyfall awards extra points for correct unanimous accusation',()=>{
