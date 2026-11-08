@@ -97,7 +97,18 @@ function assignSuggestions(g){
  }
 }
 function nextQuestion(g){
- const item=g.questions[g.round%g.questions.length];
+ // Question cursor changes on skips, while round count advances only after scored rounds.
+ // Keep unused questions until the bank cycles, then reshuffle a new cycle.
+ if(g.questionCursor>=g.questions.length){
+   const previous=g.question;
+   g.questions=shuffle(g.questions);
+   if(g.questions.length>1&&g.questions[0].question===previous){
+     const i=g.questions.findIndex(item=>item.question!==previous);
+     [g.questions[0],g.questions[i]]=[g.questions[i],g.questions[0]];
+   }
+   g.questionCursor=0;
+ }
+ const item=g.questions[g.questionCursor++];
  g.question=item.question;g.answer=item.answer;g.currentDecoys=item.decoys;g.guesser=g.order[g.round%g.order.length];
  const others=g.order.filter(id=>id!==g.guesser);
  g.blue=others[randomInt(others.length)];
@@ -112,7 +123,7 @@ export function setupFish(players,{force=false,difficulty='easy'}={}){
  if(new Set(order).size!==order.length)throw Error('Duplicate players');
  const g={kind:'fish',forced:!!force,difficulty,phase:'answer',order,round:0,
   maxRounds:order.length*(order.length<=5?2:1),
-  scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(BANK[difficulty]),
+  scores:Object.fromEntries(order.map(id=>[id,0])),questions:shuffle(BANK[difficulty]),questionCursor:0,skippedQuestions:0,
   question:null,answer:null,guesser:null,blue:null,blueKey:null,
   answers:{},options:{},submitted:[],flipped:[],winner:[],last:null};
  nextQuestion(g);return g;
@@ -138,6 +149,13 @@ export function fishMove(g,id,a={}){
  if(g.phase==='results')throw Error('Game completed');
  if(!g.order.includes(id))throw Error('Player not in game');
  if(g.phase==='answer'){
+  if(a.action==='skip'){
+    if(id!==g.guesser)throw Error('Only the Guesser can skip a question');
+    if(g.submitted.length>0)throw Error('Cannot skip after an answer was submitted');
+    g.skippedQuestions++;
+    nextQuestion(g);
+    return;
+  }
   if(id===g.guesser||a.action!=='answer'||g.submitted.includes(id))throw Error('Not eligible to answer');
   if(isMulti(g)){
    const required=g.order.length===2?4:2;
@@ -195,7 +213,7 @@ export function fishView(g,id){
   :null;
  return {kind:'fish',forced:g.forced,difficulty:g.difficulty,multipleAnswers:isMulti(g),phase:g.phase,
   question:g.question,answer:id===g.guesser&&!reveal?null:g.answer,
-  role,guesser:g.guesser,answerFields,
+  role,guesser:g.guesser,answerFields,canSkip:g.phase==='answer'&&id===g.guesser&&g.submitted.length===0,skippedQuestions:g.skippedQuestions,
   answers:g.phase==='answer'?Object.fromEntries(g.submitted.map(pid=>[pid,'Submitted']))
    :Object.fromEntries(Object.entries(g.options).map(([label,key])=>[label,g.answers[key]])),
   flipped:Object.keys(g.options).filter(label=>g.flipped.includes(g.options[label])),
