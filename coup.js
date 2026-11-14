@@ -24,12 +24,7 @@ function claimResult(g,claimant,challenger,cardIndex,block){
  const p=g.pending,role=block?p.blockRole:COUP_ACTIONS[p.action];const cards=g.influence[claimant];
  if(!Number.isInteger(cardIndex)||cards[cardIndex]===null||cards[cardIndex]===undefined)throw Error('Reveal one hidden influence');
  if(cards[cardIndex]===role){const old=cards[cardIndex];g.deck.push(old);g.deck=shuffle(g.deck);cards[cardIndex]=g.deck.pop();p.challengeSuccess=false;p.challengeLoser=challenger;p.afterChallenge=block?'blocked':'action';}
- else{
-  p.challengeSuccess=true;p.challengeLoser=claimant;p.afterChallenge=block?'action':'cancel';
-  // Coup rule: a successfully challenged fake Assassin does not pay the 3 coins.
-  // The action cost was provisionally reserved when Assassinate was declared.
-  if(!block&&p.action==='assassinate')g.coins[p.actor]+=3;
- }
+ else{p.challengeSuccess=true;p.challengeLoser=claimant;p.afterChallenge=block?'action':'cancel';}
  g.phase='challenge-loss';p.revealedRole=role;p.challengeCard=cardIndex;
 }
 function completeChallenge(g){const p=g.pending;if(p.afterChallenge==='cancel'){if(p.action==='assassinate'&&!p.challengingBlock)g.coins[p.actor]+=3;next(g);return;}if(p.afterChallenge==='blocked'){next(g);return;}if(p.afterChallenge==='action'){if(p.challengingBlock){p.blockRole=null;effect(g);}else if(['aid','assassinate','steal'].includes(p.action)){if(p.target&&!live(g,p.target)){next(g);return;}g.phase='block';}else effect(g);}}
