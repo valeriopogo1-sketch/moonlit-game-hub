@@ -31,8 +31,15 @@ test('Spyfall hides location from spy, permits unanimous accusation excluding su
 });
 test('Spyfall wrong location guess loses; time expiration favors spy',()=>{
  const g=setupSpyfall(players);spyMove(g,g.spy,{action:'guess',location:'Not a real location'});assert.equal(g.winner,'agents');
- const h=setupSpyfall(players);h.roundEnds=0;assert.equal(expireSpyRound(h,Date.now()),true);assert.equal(h.phase,'final-vote');
- for(const target of h.finalQueue){if(h.phase!=='final-vote')break;const voter=h.order.find(id=>id!==target);spyMove(h,voter,{action:'vote',agree:false});}
+ const h=setupSpyfall(players);h.roundEnds=0;assert.equal(expireSpyRound(h,Date.now()),true);assert.equal(h.phase,'final-nomination');
+ for(const accuser of h.finalQueue){
+  if(h.phase!=='final-nomination')break;
+  const suspect=h.order.find(id=>id!==accuser);
+  spyMove(h,accuser,{action:'accuse',target:suspect});
+  assert.equal(h.phase,'final-vote');
+  const voter=h.order.find(id=>id!==accuser&&id!==suspect);
+  spyMove(h,voter,{action:'vote',agree:false});
+ }
  assert.equal(h.phase,'round-results');assert.equal(h.winner,'spy');
 });
 test('Chameleon enforces clockwise one-word clues and last word guess',()=>{
@@ -228,4 +235,27 @@ test('Fish Frenzy skips every question without immediate repeats and continues p
  fishMove(g,blue,{action:'answer',answers:fields.map(f=>f.suggestion)});
  fishMove(g,g.guesser,{action:'bank'});
  assert.equal(g.phase,'round-results');
+});
+
+test('Spyfall final accuser freely chooses a suspect; suspect cannot vote',()=>{
+ const g=setupSpyfall(players);
+ g.roundEnds=0;expireSpyRound(g);
+ assert.equal(g.phase,'final-nomination');
+ const accuser=g.finalQueue[0];
+ const suspect=g.order.find(id=>id!==accuser&&id===g.spy)||g.order.find(id=>id!==accuser);
+ assert.throws(()=>spyMove(g,g.order[1],{action:'accuse',target:accuser}),/Current accuser/);
+ assert.throws(()=>spyMove(g,accuser,{action:'accuse',target:accuser}),/Current accuser/);
+ spyMove(g,accuser,{action:'accuse',target:suspect});
+ assert.equal(g.accusation.by,accuser);
+ assert.equal(g.accusation.target,suspect);
+ assert.throws(()=>spyMove(g,suspect,{action:'vote',agree:true}),/Not eligible/);
+ for(const id of g.order.filter(id=>id!==accuser&&id!==suspect))spyMove(g,id,{action:'vote',agree:true});
+ assert.equal(g.phase,'round-results');
+ assert.equal(g.winner,suspect===g.spy?'agents':'spy');
+});
+test('Coup rejects inherited JavaScript property names as illegal actions',()=>{
+ const g=setupCoup(players);
+ for(const action of ['constructor','toString','__proto__'])
+  assert.throws(()=>coupMove(g,g.order[0],{action}),/Invalid action/);
+ assert.equal(g.phase,'playing');assert.equal(g.pending,null);
 });
