@@ -54,7 +54,7 @@ test('Chameleon hides secret from Chameleon during clues',()=>{
 });
 test('Fish bluffing: exactly one true blue; red catches bank points',()=>{
  const g=setupFish(players);assert.equal(g.maxRounds,8);assert.ok(g.blue!==g.guesser);
- for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Invented false answer'});
+ for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Invented false answer '+id});
  assert.equal(g.phase,'catch');assert.equal(fishView(g,g.guesser).answer,null);
  const red=g.order.find(id=>id!==g.guesser&&id!==g.blue);
  fishMove(g,g.guesser,{action:'catch',target:Object.keys(g.options).find(k=>g.options[k]===red)});fishMove(g,g.guesser,{action:'bank'});
@@ -63,7 +63,7 @@ test('Fish bluffing: exactly one true blue; red catches bank points',()=>{
 });
 test('Fish bluffing: catching the true blue gives Guesser zero points',()=>{
  const g=setupFish(players);
- for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Wrong answer'});
+ for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Wrong answer '+id});
  fishMove(g,g.guesser,{action:'catch',target:Object.keys(g.options).find(k=>g.options[k]===g.blue)});assert.equal(g.scores[g.guesser],0);assert.equal(g.phase,'round-results');
 });
 
