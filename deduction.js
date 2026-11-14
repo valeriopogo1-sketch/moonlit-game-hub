@@ -108,7 +108,7 @@ export function spyView(g,id){
   accusation:g.accusation,finalAccuser:g.phase==='final-nomination'?g.finalQueue[g.finalIndex]:null,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,last:g.last,
   reveal:finished?{location:g.location,spy:g.spy}:null,overallWinners:g.phase==='results'?g.overallWinners:[]};
 }
-export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clueTurn:0,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:Object.fromEntries(order(players).map(id=>[id,0])),roundPoints:{},round:1,winners:[],tie:null};}
+export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clueTurn:0,clues:{},votes:{},suspect:null,guessCount:0,guessedWords:[],winner:null,points:Object.fromEntries(order(players).map(id=>[id,0])),roundPoints:{},round:1,winners:[],tie:null};}
 function settle(g,score){
  g.winner=score?'chameleon':'group';
  g.roundPoints=Object.fromEntries(g.order.map(p=>[p,score?(p===g.chameleon?score:0):(p===g.chameleon?0:2)]));
@@ -121,7 +121,7 @@ function newChameleonRound(g){
  const [topic,words]=pick(TOPICS);
  g.round++;g.dealer=previous;g.clueTurn=g.order.indexOf(previous);
  g.topic=topic;g.words=words;g.secret=pick(words);g.chameleon=pick(g.order);
- g.clues={};g.votes={};g.suspect=null;g.guessCount=0;g.winner=null;g.roundPoints={};g.tie=null;g.phase='clues';
+ g.clues={};g.votes={};g.suspect=null;g.guessCount=0;g.guessedWords=[];g.winner=null;g.roundPoints={};g.tie=null;g.phase='clues';
 }
 export function chameleonMove(g,id,a){
  if(g.phase==='results'||!g.order.includes(id))throw Error('Invalid player or finished');
@@ -150,6 +150,8 @@ export function chameleonMove(g,id,a){
  }
  if(g.phase==='guess'){
   if(id!==g.chameleon||a.action!=='guess'||!g.words.includes(a.word))throw Error('Chameleon must select a listed word');
+  if(g.guessedWords.includes(a.word))throw Error('You already guessed that word');
+  g.guessedWords.push(a.word);
   g.guessCount++;
   if(a.word===g.secret)settle(g,1);
   else if(g.order.length===3&&g.guessCount<2){}else settle(g,0);
@@ -159,5 +161,5 @@ export function chameleonMove(g,id,a){
 }
 function resolveSuspect(g,target){g.suspect=target;g.tie=null;if(target===g.chameleon)g.phase='guess';else settle(g,2);}
 export function chameleonView(g,id){
- return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.order.length>=7&&['vote','tie'].includes(g.phase)?[]:g.words,clueTurn:g.order[g.clueTurn]||null,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,winner:g.winner,round:g.round,points:g.points,roundPoints:g.roundPoints,winners:g.winners,reveal:['results','round-results'].includes(g.phase)?{secret:g.secret,chameleon:g.chameleon}:null};
+ return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.order.length>=7&&['vote','tie'].includes(g.phase)?[]:g.words,clueTurn:g.order[g.clueTurn]||null,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,guessedWords:id===g.chameleon?[...g.guessedWords]:[],winner:g.winner,round:g.round,points:g.points,roundPoints:g.roundPoints,winners:g.winners,reveal:['results','round-results'].includes(g.phase)?{secret:g.secret,chameleon:g.chameleon}:null};
 }
