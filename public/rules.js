@@ -34,7 +34,8 @@ export const GAME_RULES={
    'A motif card places a chip on an empty square showing that motif.',
    'A Wild card places a chip on any empty non-corner square.',
    'A Remove card clears one unprotected opponent chip; it cannot remove a chip already locked in a completed line.',
-   'After a normal play, draw a replacement card automatically. If a motif card has no open matching squares, exchange that dead card while replacements remain, then continue your turn.'
+   'After a normal play, draw a replacement card automatically. If a motif card has no open matching squares, exchange that dead card while replacements remain, then continue your turn.',
+   'If you cannot place or remove any chip and cannot exchange a dead motif, use Pass Turn. If everybody passes consecutively, the match ends in a draw.'
   ],
   actions:['FREE corners count as your own chip for any line passing through them.','Completed lines are protected from removal.','The first completed five-in-a-row immediately wins.'],
   scoring:'One completed line wins. If nobody has a legal card play when the deck is exhausted, the match can end in a draw.',
@@ -111,7 +112,7 @@ export const GAME_RULES={
    'If caught, the Chameleon gets one final guess at the secret word—or two guesses with exactly three players.',
    'The previous Chameleon starts the following round as dealer.'
   ],
-  actions:['The Chameleon wins 2 points by escaping identification.','If caught but guessing the secret word correctly, the Chameleon earns 1 point.','If caught and unable to guess, every other player earns 2 points.','The grid is hidden during voting in 7–8-player games.'],
+  actions:['The Chameleon wins 2 points by escaping identification.','If caught but guessing the secret word correctly, the Chameleon earns 1 point.','If caught and unable to guess, every other player earns 2 points.','For 7–8 players, the grid is hidden after clues, including while the Chameleon makes a final blind, typed guess.'],
   scoring:'The first player or players to reach five accumulated points win.',
   note:'Original topic and secret-word sets rather than the physical dice-and-code-card mechanism.',
   source:{label:'The Chameleon publisher',url:'https://bigpotato.com/products/the-chameleon'}
