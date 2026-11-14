@@ -20,3 +20,16 @@ test('Coup mobile game view is rendered without errors',()=>ui('coup',setupCoup(
 test('Spyfall mobile game view is rendered without errors',()=>ui('spyfall',setupSpyfall(players),spyView));
 test('Chameleon mobile game view is rendered without errors',()=>ui('chameleon',setupChameleon(players),chameleonView));
 test('Sounds Fishy-inspired mobile game view is rendered without errors',()=>ui('fish',setupFish(players),fishView));
+
+test('Chameleon mobile UI conceals topic and uses typed guess at 7 players',()=>{
+ const p=Array.from({length:7},(_,i)=>({id:'c'+i,name:'Participant '+i}));
+ const g=setupChameleon(p);
+ g.phase='guess';
+ const id=g.chameleon;
+ let html='';
+ const app={set innerHTML(value){html=value;},get innerHTML(){return html;},querySelectorAll(){return[];},querySelector(){return null;}};
+ renderAdditional({code:'SECRET',gameType:'chameleon',host:p[0].id,you:id,players:p,table:chameleonView(g,id)},{app,state:{},cmd(){},toast(){}});
+ assert.match(html,/id="secret-guess"/);
+ assert.doesNotMatch(html,/id="game-target"/);
+ assert.doesNotMatch(html,/role-tag/);
+});
