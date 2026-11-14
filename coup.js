@@ -33,7 +33,7 @@ export function coupMove(g,id,a={}){
  const p=g.pending;
  if(g.phase==='playing'){
   if(g.order[g.turn]!==id)throw Error('Not your turn');const action=a.action;
-  if(!(action in COUP_ACTIONS))throw Error('Invalid action');
+  if(!Object.hasOwn(COUP_ACTIONS,action))throw Error('Invalid action');
   if(g.coins[id]>=10&&action!=='coup')throw Error('10 or more coins: must Coup');
   if(action==='coup'&&g.coins[id]<7)throw Error('Need 7 coins');
   if(action==='assassinate'&&g.coins[id]<3)throw Error('Need 3 coins');
