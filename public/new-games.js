@@ -1,7 +1,7 @@
 // Mobile interfaces for four additional original-style game modes.
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const names={coup:'👑 Court of Bluffs',spyfall:'🕵️ Secret Location',chameleon:'🦎 Hidden Word',fish:'🐟 Fish Frenzy'};
-const head=v=>'<main class="shell"><section class="board"><div class="nav"><div class="logo"><span class="mark">☾</span> MOONLIT</div><span class="pill">'+esc(v.code)+'</span></div><div class="label">MULTIPLAYER GAME</div><h1 class="heading">'+names[v.gameType]+'</h1>';
+const head=v=>'<main class="shell"><section class="board"><div class="nav"><div class="logo"><span class="mark">☾</span> MOONLIT</div><span class="pill">'+esc(v.code)+'</span></div><div class="label">MULTIPLAYER GAME</div><h1 class="heading">'+names[v.gameType]+'</h1><div class="rules-inline"><button type="button" class="btn ghost small rules-trigger" data-rules="'+esc(v.gameType)+'">📖 Rules &amp; actions</button></div>';
 const foot='</section></main>';
 const btn=(label,action,extra='',disabled=false)=>'<button class="btn small '+extra+'" data-gact="'+esc(action)+'" '+(disabled?'disabled':'')+'>'+esc(label)+'</button>';
 const select=(options,label='Choose player')=>'<label class="field"><span>'+esc(label)+'</span><select class="input" id="game-target">'+options.map(([k,v])=>'<option value="'+esc(k)+'">'+esc(v)+'</option>').join('')+'</select></label>';
