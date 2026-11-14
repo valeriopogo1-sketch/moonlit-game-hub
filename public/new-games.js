@@ -19,17 +19,20 @@ export function renderAdditional(v,ctx){
  }
 }
 function renderCoup(v,ctx){
- const g=v.table,p=g.pending,me=v.you,turn=g.turnPlayer===me,phase=g.phase,opp=options(v);
+ const g=v.table,p=g.pending,me=v.you,turn=g.turnPlayer===me,phase=g.phase,opp=g.players.filter(x=>x.alive&&x.id!==me).map(x=>[x.id,v.players.find(p=>p.id===x.id)?.name||'Unknown']);
  let actions='<div class="label">WAITING FOR OTHER PLAYER</div>';
  if(phase==='playing'&&turn){
   const my=g.players.find(x=>x.id===me),mandatory=my.coins>=10;
   actions='<p class="info">'+(mandatory?'10+ coins: a Coup is mandatory.':'Choose a normal or claimed character action. Anyone may challenge a character claim.')+'</p>'+select(opp)+
   '<div class="choices">'+[['income','Income (+1)'],['aid','Foreign Aid (+2)'],['coup','Coup (-7)'],['tax','Tax / Duke (+3)'],['assassinate','Assassinate (-3)'],['steal','Steal / Captain'],['exchange','Exchange / Ambassador']].filter(([id])=>!mandatory||id==='coup').map(([id,title])=>btn(title,id)).join('')+'</div>';
  }else if(['challenge','block-challenge'].includes(phase)){
-  const excluded=phase==='challenge'?p.actor:p.blocker;if(me!==excluded)actions='<p class="info">'+(phase==='challenge'?'Challenge the action claim or pass.':'Challenge the block claim or pass.')+'</p>'+btn('Challenge','challenge')+btn('Pass','pass','ghost');
+  const excluded=phase==='challenge'?p.actor:p.blocker;if(me!==excluded){
+   const alreadyPassed=(phase==='challenge'?p.passes:p.blockPasses||[]).includes(me);
+   actions=alreadyPassed?'<div class="notice">You passed. Waiting for other players to respond.</div>':'<p class="info">'+(phase==='challenge'?'Challenge the action claim or pass.':'Challenge the block claim or pass.')+'</p>'+btn('Challenge','challenge')+btn('Pass','pass','ghost');
+  }
  }else if(phase==='block'){
-  if(me!==p.actor){const allowed=p.action==='aid'?['Duke']:p.target===me?(p.action==='steal'?['Captain','Ambassador']:['Contessa']):[];
-   actions='<p class="info">You may pass, or claim a character to block.</p>'+allowed.map(role=>btn('Block with '+role,'block:'+role)).join(' ')+btn('Pass','pass','ghost');
+  if(me!==p.actor){const allowed=p.passes.includes(me)?[]:p.action==='aid'?['Duke']:p.target===me?(p.action==='steal'?['Captain','Ambassador']:['Contessa']):[];
+   actions=p.passes.includes(me)?'<div class="notice">You passed. Waiting for others to respond.</div>':'<p class="info">You may pass, or claim a character to block.</p>'+allowed.map(role=>btn('Block with '+role,'block:'+role)).join(' ')+btn('Pass','pass','ghost');
   }
  }else if(phase==='reveal'&&me===(p.challengingBlock?p.blocker:p.actor)){
    actions='<p class="info">You have been challenged! Select a hidden influence to reveal.</p>'+g.hand.map((role,i)=>role?btn('Reveal '+role,'index:'+i):'').join(' ');
@@ -81,7 +84,7 @@ function renderCham(v,ctx){
  if(g.phase==='clues'&&g.clueTurn!==me)controls='<div class="notice">Waiting for '+esc(v.players.find(p=>p.id===g.clueTurn)?.name||'next player')+' to submit a clue. Clues are given clockwise.</div>';
  if(g.phase==='vote'&&!g.hasVoted)controls=select(options(v),'Who is the Chameleon?')+btn('Vote','vote');
  if(g.phase==='tie'&&g.dealer===me)controls=select(g.tie.map(id=>[id,v.players.find(p=>p.id===id)?.name]),'Dealer breaks tie')+btn('Choose suspect','tie');
- if(g.phase==='guess'&&g.role==='Chameleon')controls=select(g.words.map(w=>[w,w]),'Guess the secret word')+btn('Final guess','guess');
+ if(g.phase==='guess'&&g.role==='Chameleon')controls='<p class="info">'+(g.guessCount?'That guess was incorrect. Choose a different word for your final attempt.':'Guess the secret word. With 3 players, you get a second attempt if the first is wrong.')+'</p>'+select(g.words.filter(w=>!(g.guessedWords||[]).includes(w)).map(w=>[w,w]),'Guess the secret word')+btn(g.guessCount?'Final guess':'Submit guess','guess');
  if(['results','round-results'].includes(g.phase)){
   controls='<div class="notice">Round winner: '+esc(g.winner)+'. Chameleon: '+esc(v.players.find(p=>p.id===g.reveal.chameleon)?.name)+'. Secret word: '+esc(g.reveal.secret)+'</div><p class="info">Scores: '+v.players.map(p=>esc(p.name)+': '+g.points[p.id]).join(' · ')+'</p>'+
   (g.phase==='round-results'?(g.role==='Chameleon'?btn('Next round','next'):'<div class="info">Waiting for the previous Chameleon to start the next round.</div>'):'<div class="notice">🏆 First to 5 points: '+esc(g.winners.map(id=>v.players.find(p=>p.id===id)?.name).join(', '))+'</div>');
