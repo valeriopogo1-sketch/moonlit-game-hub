@@ -138,7 +138,7 @@ export function chameleonMove(g,id,a){
  if(g.phase==='clues'){
   if(a.action!=='clue'||Object.hasOwn(g.clues,id))throw Error('Submit one clue only');
   if(g.order[g.clueTurn]!==id)throw Error('Wait for your clue turn');
-  const clue=String(a.clue||'').trim();if(!/^\S+$/.test(clue)||clue.length>35)throw Error('Clue must be one word');
+  const clue=String(a.clue||'').trim();if(!/^\S+$/.test(clue)||clue.length>35)throw Error('Clue must be one word');if(id!==g.chameleon&&clue.toLocaleLowerCase()===g.secret.toLocaleLowerCase())throw Error('Your clue must relate to the secret word, not state it directly');
   g.clues[id]=clue;g.clueTurn=(g.clueTurn+1)%g.order.length;if(Object.keys(g.clues).length===g.order.length)g.phase='vote';return;
  }
  if(g.phase==='vote'){
