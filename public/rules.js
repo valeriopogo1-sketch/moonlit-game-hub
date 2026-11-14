@@ -34,12 +34,12 @@ export const GAME_RULES={
    'A motif card places a chip on an empty square showing that motif.',
    'A Wild card places a chip on any empty non-corner square.',
    'A Remove card clears one unprotected opponent chip; it cannot remove a chip already locked in a completed line.',
-   'After a normal play, draw a replacement card automatically. If a motif card has no open matching squares, exchange that dead card and continue your turn.'
+   'After a normal play, draw a replacement card automatically. If a motif card has no open matching squares, exchange that dead card while replacements remain, then continue your turn.'
   ],
   actions:['FREE corners count as your own chip for any line passing through them.','Completed lines are protected from removal.','The first completed five-in-a-row immediately wins.'],
   scoring:'One completed line wins. If nobody has a legal card play when the deck is exhausted, the match can end in a draw.',
   note:'House-rule variant: 8×8 board, individual players and one line to win. Standard Sequence commonly uses a 10×10 board and different team/sequence victory requirements.',
-  source:{label:'Sequence-style reference',url:'https://www.playsequencegame.com/sequence_board_game_rules_and_instructions/'}
+  source:{label:'Sequence-style comparison rules',url:'https://sequence.stratzagames.com/sequence-rules-players'}
  },
  organs:{
   name:'🫀 Organ Mayhem',players:'2–6 players',
@@ -65,8 +65,8 @@ export const GAME_RULES={
   steps:[
    'On your turn take Income, Foreign Aid, Coup, or claim a character action. You may bluff about a character you do not hold.',
    'Other players can challenge character claims. If the claimant proves the claim, the challenger loses one Influence; the proven card is swapped with the deck.',
-   'If the claimant was bluffing, the claimant loses one Influence and that action is cancelled.',
-   'Foreign Aid and certain character actions can be blocked by an appropriate claimed character. The block may also be challenged.',
+   'If the claimant was bluffing, the claimant loses one Influence and that action is cancelled. A disproved Assassination refunds its three-coin cost.',
+   'Foreign Aid and certain character actions can be blocked by an appropriate claimed character. The block may also be challenged. A correctly blocked Assassination still costs three coins.',
    'Choose an Influence to reveal whenever you are required to lose one. Revealed Influence stays visible and no longer counts as living.',
    'At the beginning of your turn with ten or more coins, you must Coup.'
   ],
@@ -89,10 +89,10 @@ export const GAME_RULES={
   setup:'A timed round lasts eight minutes. One Spy does not know the secret location; everyone else sees the location and an individual role. The game tracks scores across five rounds.',
   steps:[
    'Ask one another questions about the location over a voice call or in person. The person who answers asks someone else next, not the person who questioned them.',
-   'Before time expires, any player may initiate one accusation. Every player except the suspect must agree to convict.',
-   'A failed unanimous vote returns everyone to the timed discussion.',
+   'Before time expires, each player may initiate one accusation. The eight-minute clock pauses for voting. Everyone except the suspect must agree to convict.',
+   'A failed unanimous vote resumes the clock with the unused time remaining. The original accuser cannot accuse again during the timed phase.',
    'During timed play, the Spy may reveal themselves and choose a location guess. A correct guess wins for the Spy; a wrong guess wins for the group.',
-   'After time runs out, each player gets one final turn to nominate a suspect. The rest vote, excluding the suspect. If nobody is unanimously convicted, the Spy wins.'
+   'After time runs out, each player gets one final turn to nominate a suspect, starting with the round’s dealer. The rest vote, excluding the suspect. If nobody is unanimously convicted, the Spy wins. The previous round’s Spy becomes the next dealer.'
   ],
   actions:['Successful mid-round accusation: non-spies each get 1 point, with 2 for the accuser.','Spy earns 2 points if the group fails to convict, and 4 for a correct location guess or wrong conviction.','After five rounds, the highest total wins.'],
   scoring:'A unanimously convicted Spy loses; a unanimously convicted innocent player wins for the Spy. The final round compares cumulative player scores.',
@@ -104,7 +104,7 @@ export const GAME_RULES={
   objective:'Identify the Chameleon, who does not know the group’s secret word.',
   setup:'Everyone sees a 16-word topic grid. All players except the Chameleon see which word is the secret. The dealer starts the clue sequence.',
   steps:[
-   'Each person gives exactly one short word as a clue, in turn order.',
+   'Each person gives exactly one related word as a clue, in turn order. Codebreakers cannot submit the secret word itself.',
    'Discuss which clues seem suspicious, then secretly vote for a different player.',
    'The player with the most votes is the suspect. The dealer decides if the vote is tied.',
    'If the suspect was not the Chameleon, the Chameleon escapes and scores.',
@@ -132,8 +132,8 @@ export const GAME_RULES={
    'Normal 4–10 players: each fish submits one answer.',
    'Force Start with 3 players: True Blue submits one correct plus one editable fake; Red Herring submits two editable fakes.',
    'Force Start with 2 players: the answering player supplies one correct plus three editable fake answers. No bot answers are added.',
-   'Submitted answers must be unique. Correct answers cannot be replaced with false ones.',
-   'The Guesser earns 1 point per caught fake plus a bonus for catching all fakes. Other players may score when Blue is caught or when their false answers survive.'
+   'All submitted answers must be distinct, including normal four-to-ten-player rounds. True Blue must use the correct answer, and Red Herrings must submit false answers.',
+   'The Guesser earns 1 point per caught fake plus one bonus for catching all fakes. If Blue is caught, the Guesser scores 0 and Blue scores one per unflipped answer; unflipped Red Herrings score based on flipped answers. Forced games score each anonymous fake answer separately as a house rule.'
   ],
   scoring:'After the scheduled Guesser rotations, the highest accumulated score wins (ties share victory).',
   note:'Sounds Fishy–style gameplay with an original question bank and custom two- and three-player house rules. The official boxed game specifies 4–10 players.',
