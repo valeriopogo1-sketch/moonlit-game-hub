@@ -1,11 +1,15 @@
 // Original turn-based games. Rendered inside the shared Moonlit room.
 const colors=['#b494f8','#5fcee3','#ee92a8','#e6bb73'];
-const names={lines:'♠️ Five in a Row',organs:'🫀 Organ Mayhem',werewolf:'🐺 Moonlit Wolves'};
+const names={lines:'♠️ Five in a Row',organs:'🫀 Organ Mayhem',werewolf:'🐺 Moonlit Wolves',coup:'👑 Court of Bluffs',spyfall:'🕵️ Secret Location',chameleon:'🦎 Hidden Word',fish:'🐠 Fish Frenzy'};
 export const gameName=kind=>names[kind]||'Moonlit Game';
 const tile=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 const meName=(v,id)=>v.players.find(p=>p.id===id)?.name||'Unknown';
 const participants=v=>v.players.map((p,i)=>'<span class="participant"><i style="background:'+colors[i]+'"></i>'+tile(p.name)+'</span>').join('');
-function shell(v,body){return '<main class="shell"><section class="board"><header class="nav"><div class="logo"><span class="mark">☾</span> MOONLIT</div><span class="pill">✦ Game night</span></header><div class="topline"><div><div class="label">PRIVATE GAME ROOM</div><h1 class="heading">'+gameName(v.gameType)+'</h1></div><span class="pill">'+tile(v.code)+'</span></div>'+body+'</section></main>';}
+function shell(v,body){
+ return '<main class="shell"><section class="board"><header class="nav"><div class="logo"><span class="mark">☾</span> MOONLIT</div><span class="pill">✦ Game night</span></header>'+
+ '<div class="topline"><div><div class="label">'+(v.settings?.isPublic===false?'PRIVATE':'PUBLIC')+' GAME ROOM</div><h1 class="heading">'+gameName(v.gameType)+'</h1></div><span class="pill">'+tile(v.code)+'</span></div>'+
+ '<div class="rules-inline"><button type="button" class="btn ghost small rules-trigger" data-rules="'+tile(v.gameType)+'">📖 Rules &amp; actions</button></div>'+body+'</section></main>';
+}
 export function renderLines(v,ctx){
  const g=v.table,p=ctx.state.pick||{},turn=g.phase==='playing'&&g.turnPlayer===v.you;
  const card=Number.isInteger(p.card)?g.hand[p.card]:null;
