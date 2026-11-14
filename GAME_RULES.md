@@ -1,5 +1,7 @@
 # Moonlit Game Hub — Current Rules and Audit (November 14, 2026)
 
+**For the most thorough, up-to-date verified comparison of the current game engines to published rules, see [RULES_VERIFICATION.md](RULES_VERIFICATION.md).**
+
 This is an independent multiplayer implementation with original names, original topic/location lists, and original sample questions. We do not reproduce copyrighted card artwork or the publishers' question decks.
 
 ## Moonlit Wolves (3–10 players)
