@@ -36,6 +36,7 @@ async function runScenario(t){
  const again=await request('/join',{method:'POST',body:{code:host.code,name:'GuestThree'}});
  assert.equal(again.status,200);
  assert.equal((await request('/rooms/'+host.code+'/start',{method:'POST',token:host.token})).status,200);
+ assert.equal((await request('/rooms/'+host.code+'/start',{method:'POST',token:host.token})).status,400,'Host must not overwrite an ongoing match');
  assert.equal((await request('/rooms/'+host.code+'/kick',{method:'POST',token:host.token,body:{playerId:again.playerId}})).status,400);
  const playing=(await request('/rooms/public')).rooms.find(r=>r.code===host.code);
  assert.equal(playing.status,'playing');
