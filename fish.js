@@ -173,6 +173,8 @@ export function fishMove(g,id,a={}){
    const response=normalize(a.answer);
    if(!response||response.length>160)throw Error('Answer must be 1–160 characters');
    if(id===g.blue&&!same(response,g.answer))throw Error('Blue fish must submit the true answer');
+   if(id!==g.blue&&same(response,g.answer))throw Error('Red Herring must give a false answer');
+   if(Object.values(g.answers).some(existing=>same(existing,response)))throw Error('Answers must not duplicate another fish');
    g.answers[id]=id===g.blue?g.answer:response;
   }
   g.submitted.push(id);
