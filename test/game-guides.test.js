@@ -60,3 +60,14 @@ test('game rule modal renders a selected guide and can close',()=>{
   else globalThis.document=original;
  }
 });
+
+test('published edge-case corrections are reflected in the mobile rules',()=>{
+ assert.match(GAME_RULES.coup.steps.join(' '),/refund/);
+ assert.match(GAME_RULES.coup.steps.join(' '),/blocked Assassination still costs three/);
+ assert.match(GAME_RULES.spyfall.steps.join(' '),/clock pauses/);
+ assert.match(GAME_RULES.spyfall.steps.join(' '),/resumes the clock/);
+ assert.match(GAME_RULES.spyfall.steps.join(' '),/previous round.s Spy/);
+ assert.match(GAME_RULES.chameleon.steps.join(' '),/Codebreakers cannot submit/);
+ assert.match(GAME_RULES.fish.actions.join(' '),/All submitted answers must be distinct/);
+ assert.match(GAME_RULES.fish.actions.join(' '),/unflipped answer/);
+});
