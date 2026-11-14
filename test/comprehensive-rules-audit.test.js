@@ -151,3 +151,51 @@ test('Fish Frenzy: round summary matches changes to every player score',()=>{
  const view=fishView(g,g.guesser);
  assert.deepEqual(view.last.pointChanges,g.last.pointChanges);
 });
+
+test('Hidden Word: a seven/eight-player final guess stays blind even after voting',()=>{
+ for(const count of [7,8]){
+  const g=setupChameleon(people.slice(0,count));
+  for(const id of g.order)chameleonMove(g,id,{action:'clue',clue:'Related'});
+  const decoy=g.order.find(id=>id!==g.chameleon);
+  for(const id of g.order)chameleonMove(g,id,{action:'vote',target:id===g.chameleon?decoy:g.chameleon});
+  assert.equal(g.phase,'guess');
+  const view=chameleonView(g,g.chameleon);
+  assert.deepEqual(view.words,[],'Topic grid must stay hidden after the vote');
+  chameleonMove(g,g.chameleon,{action:'guess',word:g.secret.toLowerCase()});
+  assert.equal(g.winner,'chameleon','Blind, case-insensitive correct word wins');
+ }
+});
+test('Hidden Word: a blind wrong guess is allowed and scores group victory',()=>{
+ const g=setupChameleon(people.slice(0,7));
+ for(const id of g.order)chameleonMove(g,id,{action:'clue',clue:'Related'});
+ for(const id of g.order)chameleonMove(g,id,{action:'vote',target:id===g.chameleon?g.order.find(p=>p!==id):g.chameleon});
+ assert.equal(g.phase,'guess');
+ chameleonMove(g,g.chameleon,{action:'guess',word:'Not an option'});
+ assert.equal(g.winner,'group');
+});
+test('Five in a Row: a player with no moves may pass, and everyone passing produces a draw',()=>{
+ const g=setupLines(people.slice(0,2));
+ g.deck=[];
+ for(const id of g.order)g.hands[id]=[{type:'remove',id:'test-dead-remover'}];
+ assert.equal(g.phase,'playing');
+ const first=g.order[g.turn];
+ assert.equal(g.hands[first].length,1);
+ lineMove(g,first,{pass:true});
+ assert.equal(g.phase,'playing');
+ assert.equal(g.order[g.turn]!==first,true);
+ lineMove(g,g.order[g.turn],{pass:true});
+ assert.equal(g.phase,'results');
+ assert.equal(g.winner,null);
+});
+test('Five in a Row: passing is prohibited when a move or exchange is available',()=>{
+ const g=setupLines(people.slice(0,2));
+ const id=g.order[g.turn];
+ g.hands[id]=[{type:'wild',id:'test-legal'}];
+ assert.throws(()=>lineMove(g,id,{pass:true}),/must play or exchange/);
+ const dead={type:'tile',motif:'☀',id:'test-dead'};
+ g.hands[id]=[dead];g.chips=g.board.map(v=>v==='☀'?'other':null);
+ assert.throws(()=>lineMove(g,id,{pass:true}),/must play or exchange/);
+ g.deck=[];
+ lineMove(g,id,{pass:true});
+ assert.equal(g.last.card,'pass');
+});
