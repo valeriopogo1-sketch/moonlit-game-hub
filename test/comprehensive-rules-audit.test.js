@@ -138,3 +138,16 @@ test('Moonlit Wolves: tied-high vote eliminates all leaders, but one vote each e
  castVote(g,p[3].id,p[0].id);
  assert.deepEqual(g.result.eliminated,[p[2].id]);
 });
+
+test('Fish Frenzy: round summary matches changes to every player score',()=>{
+ const g=setupFish(people.slice(0,4));
+ let i=0;
+ for(const id of g.order.filter(id=>id!==g.guesser))fishMove(g,id,{action:'answer',answer:id===g.blue?g.answer:'Wrong '+(++i)});
+ const before={...g.scores};
+ const fakeLabel=Object.keys(g.options).find(label=>g.options[label]!==g.blueKey);
+ fishMove(g,g.guesser,{action:'catch',target:fakeLabel});
+ fishMove(g,g.guesser,{action:'bank'});
+ for(const id of g.order)assert.equal(g.last.pointChanges[id],g.scores[id]-before[id]);
+ const view=fishView(g,g.guesser);
+ assert.deepEqual(view.last.pointChanges,g.last.pointChanges);
+});
