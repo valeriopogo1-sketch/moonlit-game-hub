@@ -120,7 +120,8 @@ function renderFish(v,ctx){
    '<div class="results-list">'+Object.entries(g.answers).map(([id,response])=>'<div class="result-row"><div><span>Fish '+esc(id)+'</span><p class="info">'+esc(response)+'</p></div><div>'+(g.flipped.includes(id)?'<span class="tag">FLIPPED</span>':isGuesser?'<button class="btn small" data-fish-catch="'+esc(id)+'">Catch 🐟</button>':'<span class="tiny">Hidden</span>')+'</div></div>').join('')+'</div>'+
    (isGuesser?btn('Bank and end turn','bank','ghost'):'<div class="notice">Waiting for the Guesser to catch or bank.</div>');
  }else if(g.phase==='round-results'){
-  controls='<div class="notice">Round finished. True Blue: '+esc(names(g.last.blue))+'. Correct answer: '+esc(g.last.correct)+'. The Guesser earned '+g.last.guesserPoints+' points.</div>'+
+  controls='<div class="notice">Round finished. True Blue: '+esc(names(g.last.blue))+'. Correct answer: '+esc(g.last.correct)+'.</div>'+
+   '<div class="label">POINTS EARNED THIS ROUND</div><div class="results-list">'+v.players.map(p=>'<div class="result-row"><span>'+esc(p.name)+'</span><b>+'+Number(g.last.pointChanges?.[p.id]||0)+' pts</b></div>').join('')+'</div>'+
    (isGuesser?btn('Next round','next'):'<p class="info">Waiting for the Guesser to advance.</p>');
  }else controls='<div class="notice">Game finished! Winner(s): '+esc((g.winner||[]).map(names).join(', '))+'</div>';
  ctx.app.innerHTML=head(v)+'<div class="panel" data-fish-edit-key="'+esc(draftKey)+'"><div class="phase"><div class="phase-icon">🐠</div><div><h3>Round '+(g.round+1)+' / '+g.maxRounds+'</h3><p>Guesser: '+esc(names(g.guesser))+'</p></div></div><div class="role-card"><span class="role-emoji">🐟</span><div class="team">'+esc(g.role)+'</div><h2>'+esc(g.question)+'</h2><p>'+(isGuesser?'Find the fake answers, but avoid the true one.':'The true answer is: '+esc(g.answer))+'</p></div><div class="label">SCORES</div><div class="results-list">'+scores+'</div>'+controls+'</div>'+foot;
