@@ -1,6 +1,6 @@
 # Moonlit Game Hub — Rules Verification
 
-**Audited:** November 14, 2026 | **Target release:** v0.5.7
+**Audited:** November 14, 2026 | **Target release:** v0.5.8
 
 This review compares the actual game engines, mobile instructions and automated tests with published rule references. It separates **Moonlit house rules** from the rules of commercial products. Moonlit is not an official edition of the referenced games, and this audit does not establish trademark or copyright licensing.
 
@@ -30,7 +30,7 @@ After discussion each player casts one secret, **irreversible** vote for another
 
 **Code:** lines.js. **Reference:** https://sequence.stratzagames.com/sequence-rules-players
 
-Moonlit uses a **custom 8×8 board** with four shared FREE corners. Each player starts with five cards and competes individually. Match motif cards to empty matching squares, Wild to any empty non-corner square, and Remove to an opponent piece not already protected by a complete line. Playing a normal card draws a replacement. A completely unplayable motif card can be exchanged without ending the turn, but only when a replacement exists.
+Moonlit uses a **custom 8×8 board** with four shared FREE corners. Each player starts with five cards and competes individually. Match motif cards to empty matching squares, Wild to any empty non-corner square, and Remove to an opponent piece not already protected by a complete line. Playing a normal card draws a replacement. A completely unplayable motif card can be exchanged without ending the turn, but only when a replacement exists. **If a player has no legal play and no available exchange, they may pass; if everyone passes consecutively, the match ends in a draw.**
 
 The first complete horizontal, vertical or diagonal line of five wins. Standard Sequence uses a 10×10 board and commonly requires **two sequences for two players/two teams**, but only one for three solo players/teams; player counts and teams also differ. Moonlit does not reproduce those formats.
 
@@ -88,7 +88,7 @@ Scoring: non-spies earn one each when they win, plus an extra for the successful
 
 One randomly chosen Chameleon does not know the secret word, which all Codebreakers learn from a 16-word topic grid. Each player offers exactly one related clue word in dealer order. Moonlit prevents Codebreakers from submitting the exact secret as a clue; this is an app-specific anti-spoiler rule, not a claim that the official rulebook mandates this exact input validation.
 
-After discussion, each person votes for a different suspect. Dealer breaks ties. If the Chameleon was caught, they may guess the word once, or twice with exactly three players; duplicate guesses are rejected. In seven/eight-player matches the topic grid is hidden during voting. Uncaught Chameleon earns two; caught but correct guess earns one; caught and incorrect earns two for every other player. First to five points wins, and the previous Chameleon becomes the new dealer.
+After discussion, each person votes for a different suspect. Dealer breaks ties. If the Chameleon was caught, they may guess the word once, or twice with exactly three players; duplicate guesses are rejected. In seven/eight-player matches the topic grid remains hidden **through voting and the final Chameleon's guess**, which is a typed blind answer rather than a visible list of choices. Uncaught Chameleon earns two; caught but correct guess earns one; caught and incorrect earns two for every other player. First to five points wins, and the previous Chameleon becomes the new dealer.
 
 Moonlit replaces physical dice and code cards with a server-selected secret and original word lists.
 
@@ -125,3 +125,11 @@ In the normal game, unflipped Reds score one for each fish flipped, even True Bl
 The GitHub workflow runs game engine tests, API integration checks, scoring/exception tests, secrecy view tests, UI smoke tests and in-app rules-guide checks. These tests **do not replace** full two-device Android QA or guarantee coverage of all malformed/concurrent inputs.
 
 **Remaining priorities:** (1) host-controlled idle-player recovery rules, (2) durable state storage, (3) fuller original question banks, (4) optional in-game voice chat, (5) optional classic board variants for people who explicitly want published commercial-rule parity.
+
+## v0.5.8 additional edge-case verification
+
+- **Hidden Word:** In the seven-/eight-player special rule, the topic grid stays face down during the Chameleon's last guess, matching the original rules' instruction to hide it after the clue phase. The mobile screen accepts a typed guess without leaking the topic list. Earlier wrong guesses cannot be repeated.
+- **Five in a Row:** The custom board now has an explicit legal-pass rule when no playable card or exchange is possible. Every player passing consecutively produces a draw; playable cards and available exchanges prevent passing. This is a Moonlit house rule to avoid an unwinnable blocked turn.
+- **Coup / Spyfall:** Verified the prior v0.5.7 refund and pause-time implementations and retained the original Spyfall rule that a successfully accusing player earns an extra point, including in final nominations.
+
+Regression tests cover these cases. Live multi-device testing and disconnect recovery are still separate tasks.
