@@ -129,6 +129,7 @@ export function setupFish(players,{force=false,difficulty='easy'}={}){
  nextQuestion(g);return g;
 }
 function scoreRound(g){
+ const beforeScores={...g.scores};
  const flipped=g.flipped.length,total=Object.keys(g.answers).length;
  const blueFlipped=g.flipped.includes(g.blueKey);
  const earned=blueFlipped?0:flipped+(flipped===total-1?1:0);
@@ -143,7 +144,7 @@ function scoreRound(g){
   }
  }
  g.phase='round-results';
- g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:earned};
+ g.last={blue:g.blue,correct:g.answer,flipped:[...g.flipped],guesserPoints:earned,pointChanges:Object.fromEntries(g.order.map(id=>[id,g.scores[id]-beforeScores[id]]))};
 }
 export function fishMove(g,id,a={}){
  if(g.phase==='results')throw Error('Game completed');
