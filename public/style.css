@@ -40,3 +40,34 @@
 
 /* Minimum player requirement on each game card */
 .game-player-count{display:flex;align-items:center;gap:6px;color:#c7b8ea;font-weight:700;font-size:12px;margin:0 0 12px}
+
+
+/* Responsive game rulebook: independent of PWA game rerenders. */
+.rules-trigger{min-height:36px;white-space:nowrap;margin-inline-start:7px}
+.rules-inline{margin:10px 0 18px;display:flex;justify-content:flex-start}
+.rules-dialog{color:#f5f1ff;background:#1c1a30;border:1px solid #645080;border-radius:20px;width:min(660px,calc(100vw - 24px));max-height:min(85dvh,780px);padding:0;box-shadow:0 22px 80px rgba(0,0,0,.6);overflow-y:auto;overscroll-behavior:contain}
+.rules-dialog::backdrop{background:rgba(5,5,14,.78);backdrop-filter:blur(4px)}
+.rules-content{padding:24px 27px 32px}
+.rules-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rules-content h2{font:800 clamp(22px,5vw,29px) Outfit,sans-serif;line-height:1.2;margin:14px 0 5px}
+.rules-content h3{font:800 17px Outfit,sans-serif;margin:23px 0 9px;color:#f1e6ff}
+.rules-content p{font-size:14px;line-height:1.68;color:#dfd6ee;margin:7px 0}
+.rules-players{font-weight:700;color:#bda7ef!important}
+.rules-highlight{padding:16px 19px;margin:18px 0 8px;background:#302846;border:1px solid #6b538b;border-radius:14px}
+.rules-highlight strong,.rules-note strong{color:#f3dcff}
+.rules-steps,.rules-actions{padding-left:24px;margin:9px 0;display:grid;gap:11px}
+.rules-steps li,.rules-actions li{font-size:14px;line-height:1.6;color:#e4dcee;padding-left:3px}
+.rules-steps li::marker{font-weight:800;color:#b8a0ed}
+.rules-actions li::marker{color:#a6d6ce}
+.rules-note{background:#292637;border-left:3px solid #a48bd8;padding:13px 16px;margin-top:22px;border-radius:6px}
+.rules-note p{margin:3px 0}
+.rules-source{display:inline-block;margin:18px 0 8px;color:#cfc1ff;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+.rules-foot{font-size:12px!important;color:#a99bbb!important}
+@media(max-width:600px){
+ .rules-content{padding:16px 17px 24px}
+ .rules-dialog{max-height:90dvh}
+ .rules-trigger{margin-inline-start:5px}
+ .nav:has(.rules-trigger){flex-wrap:wrap;row-gap:10px}
+ .nav:has(.rules-trigger) .pill{display:none}
+ .game-copy .rules-trigger{margin-top:8px}
+}
