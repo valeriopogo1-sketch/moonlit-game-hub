@@ -84,14 +84,19 @@ function renderCham(v,ctx){
  if(g.phase==='clues'&&g.clueTurn!==me)controls='<div class="notice">Waiting for '+esc(v.players.find(p=>p.id===g.clueTurn)?.name||'next player')+' to submit a clue. Clues are given clockwise.</div>';
  if(g.phase==='vote'&&!g.hasVoted)controls=select(options(v),'Who is the Chameleon?')+btn('Vote','vote');
  if(g.phase==='tie'&&g.dealer===me)controls=select(g.tie.map(id=>[id,v.players.find(p=>p.id===id)?.name]),'Dealer breaks tie')+btn('Choose suspect','tie');
- if(g.phase==='guess'&&g.role==='Chameleon')controls='<p class="info">'+(g.guessCount?'That guess was incorrect. Choose a different word for your final attempt.':'Guess the secret word. With 3 players, you get a second attempt if the first is wrong.')+'</p>'+select(g.words.filter(w=>!(g.guessedWords||[]).includes(w)).map(w=>[w,w]),'Guess the secret word')+btn(g.guessCount?'Final guess':'Submit guess','guess');
+ if(g.phase==='guess'&&g.role==='Chameleon'){
+  const blind=g.words.length===0;
+  controls='<p class="info">'+(blind?'The topic grid is hidden after clues for 7–8 players. Type your best guess from memory.':g.guessCount?'That guess was incorrect. Choose a different word for your final attempt.':'Guess the secret word. With 3 players, you get a second attempt if the first is wrong.')+'</p>'+
+  (blind?'<label class="field"><span>YOUR SECRET WORD GUESS</span><input id="secret-guess" class="input" maxlength="50" autocomplete="off" placeholder="Type the word"></label>':select(g.words.filter(w=>!(g.guessedWords||[]).includes(w)).map(w=>[w,w]),'Guess the secret word'))+
+  btn(g.guessCount?'Final guess':'Submit guess','guess');
+ }
  if(['results','round-results'].includes(g.phase)){
   controls='<div class="notice">Round winner: '+esc(g.winner)+'. Chameleon: '+esc(v.players.find(p=>p.id===g.reveal.chameleon)?.name)+'. Secret word: '+esc(g.reveal.secret)+'</div><p class="info">Scores: '+v.players.map(p=>esc(p.name)+': '+g.points[p.id]).join(' · ')+'</p>'+
   (g.phase==='round-results'?(g.role==='Chameleon'?btn('Next round','next'):'<div class="info">Waiting for the previous Chameleon to start the next round.</div>'):'<div class="notice">🏆 First to 5 points: '+esc(g.winners.map(id=>v.players.find(p=>p.id===id)?.name).join(', '))+'</div>');
  }
  const clues=Object.entries(g.clues).map(([id,w])=>'<div class="result-row"><span>'+esc(v.players.find(p=>p.id===id)?.name)+'</span><b>'+esc(w)+'</b></div>').join('');
  ctx.app.innerHTML=head(v)+'<div class="panel"><div class="role-card"><span class="role-emoji">🦎</span><div class="team">'+esc(g.topic)+'</div><h2>'+esc(g.role==='Chameleon'?'You are the Chameleon':g.secret)+'</h2><p>'+esc(g.role==='Chameleon'?'Blend in without knowing the chosen word.':'Give a related one-word clue. Do not submit the secret word itself.')+'</p></div><div class="label">TOPIC WORDS</div><div class="topic-words">'+g.words.map(w=>'<span class="role-tag">'+esc(w)+'</span>').join('')+'</div><div class="results-list">'+clues+'</div><div class="label">PHASE: '+esc(g.phase.toUpperCase())+' · ROUND '+g.round+'</div>'+controls+'</div>'+foot;
- ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='clue')ctx.cmd('play',{action:'clue',clue:ctx.app.querySelector('#clue')?.value});if(a==='vote')ctx.cmd('play',{action:'vote',target:ctx.app.querySelector('#game-target')?.value});if(a==='tie')ctx.cmd('play',{action:'tiebreak',target:ctx.app.querySelector('#game-target')?.value});if(a==='guess')ctx.cmd('play',{action:'guess',word:ctx.app.querySelector('#game-target')?.value});if(a==='next')ctx.cmd('play',{action:'next'});});
+ ctx.app.querySelectorAll('[data-gact]').forEach(b=>b.onclick=()=>{const a=b.dataset.gact;if(a==='clue')ctx.cmd('play',{action:'clue',clue:ctx.app.querySelector('#clue')?.value});if(a==='vote')ctx.cmd('play',{action:'vote',target:ctx.app.querySelector('#game-target')?.value});if(a==='tie')ctx.cmd('play',{action:'tiebreak',target:ctx.app.querySelector('#game-target')?.value});if(a==='guess')ctx.cmd('play',{action:'guess',word:ctx.app.querySelector('#secret-guess')?.value||ctx.app.querySelector('#game-target')?.value});if(a==='next')ctx.cmd('play',{action:'next'});});
 }
 function renderFish(v,ctx){
  const g=v.table,me=v.you,isGuesser=g.guesser===me;
