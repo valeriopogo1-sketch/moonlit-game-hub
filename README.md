@@ -69,3 +69,7 @@ Reconnect persistence, automated tests with multiple devices, timer tuning, expa
 - Public lists intentionally include room codes and host display names but never expose game secrets, cards, session tokens, or hidden-role data.
 - **Limitation:** Guest-only accounts do not offer permanent bans: a removed player could rejoin with a new nickname/session or a shared invitation. Permanent blocking would require authenticated accounts or additional moderation controls.
 - All rooms still live in memory; public listings clear when the server restarts.
+
+## In-app Rules and Gameplay Audit (v0.5.6)
+
+All seven games include a **📖 How to Play / Rules & Actions** guide on their home card, in the lobby, and during play. The guide describes the **rules this app implements**, including Moonlit-specific house rules and scoring, rather than claiming exact parity with licensed physical board games. See [GAME_RULES.md](GAME_RULES.md) for the current rules, source references, fixes, and remaining improvement priorities. Some games still require an external voice conversation; active rooms live in memory and are lost on server restart.
