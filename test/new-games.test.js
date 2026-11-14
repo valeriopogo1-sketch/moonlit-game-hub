@@ -259,3 +259,36 @@ test('Coup rejects inherited JavaScript property names as illegal actions',()=>{
   assert.throws(()=>coupMove(g,g.order[0],{action}),/Invalid action/);
  assert.equal(g.phase,'playing');assert.equal(g.pending,null);
 });
+
+test('Coup steal challenge cannot get stuck when its target loses their last influence',()=>{
+ const g=setupCoup(players.slice(0,3));
+ g.influence.p0[0]='Captain';g.influence.p1[1]=null;g.lost.p1[1]='Duke';
+ coupMove(g,'p0',{action:'steal',target:'p1'});
+ coupMove(g,'p1',{action:'challenge'});
+ coupMove(g,'p0',{index:0});
+ assert.equal(g.phase,'challenge-loss');
+ coupMove(g,'p1',{index:0});
+ assert.equal(g.phase,'playing');
+ assert.equal(g.order[g.turn],'p2');
+ assert.equal(g.coins.p0,2);
+});
+test('Coup player who passed cannot block Foreign Aid later',()=>{
+ const g=setupCoup(players.slice(0,3));
+ coupMove(g,'p0',{action:'aid'});
+ coupMove(g,'p1',{action:'pass'});
+ assert.throws(()=>coupMove(g,'p1',{action:'block',role:'Duke'}),/Already passed/);
+ coupMove(g,'p2',{action:'pass'});
+ assert.equal(g.coins.p0,4);
+});
+test('Chameleon three-player bonus guess cannot repeat a wrong word',()=>{
+ const g=setupChameleon(players.slice(0,3));
+ for(const id of g.order)chameleonMove(g,id,{action:'clue',clue:'Hint'});
+ for(const id of g.order)chameleonMove(g,id,{action:'vote',target:id===g.chameleon?g.order.find(p=>p!==id):g.chameleon});
+ assert.equal(g.phase,'guess');
+ const wrong=g.words.find(w=>w!==g.secret);
+ chameleonMove(g,g.chameleon,{action:'guess',word:wrong});
+ assert.equal(g.phase,'guess');
+ assert.throws(()=>chameleonMove(g,g.chameleon,{action:'guess',word:wrong}),/already guessed/);
+ chameleonMove(g,g.chameleon,{action:'guess',word:g.secret});
+ assert.equal(g.winner,'chameleon');
+});
