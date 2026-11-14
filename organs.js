@@ -123,6 +123,6 @@ export function organView(g,id){return {
  kind:g.kind,phase:g.phase,parts:PARTS,bodies:g.bodies,hand:g.hands[id],reactionTarget:g.phase==='reaction'?g.reactionTarget:null,
  handSizes:Object.fromEntries(g.order.map(p=>[p,g.hands[p].length])),
  turnPlayer:g.order[g.turn],winner:g.winner,last:g.last,
- canDiscard:g.order[g.turn]===id&&!canAct(g,id),lastAttack:g.lastAttack?.target===id&&!g.lastAttack.blocked?{part:g.lastAttack.part,from:g.lastAttack.player}:null,
+ canDiscard:g.phase==='playing'&&g.order[g.turn]===id&&!canAct(g,id),lastAttack:g.lastAttack?.target===id&&!g.lastAttack.blocked?{part:g.lastAttack.part,from:g.lastAttack.player}:null,
  round:g.round,deckRemaining:g.deck.length
 };}
