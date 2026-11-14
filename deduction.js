@@ -48,13 +48,15 @@ function finishSpy(g,winner,reason,extra=false){
  }
 }
 function beginFinalVote(g){
- g.phase='final-vote';g.finalQueue=[...g.order.slice(1),g.order[0]];g.finalIndex=0;
- g.accusation={by:null,target:g.finalQueue[0],votes:{}};
+ // When time expires, each player gets a turn as ACCUSER, not as the accused.
+ // Accusers nominate their own suspect; the suspect has no vote.
+ g.phase='final-nomination';g.finalQueue=[...g.order];g.finalIndex=0;
+ g.accusation=null;
 }
 function finalVoteAdvance(g){
  g.finalIndex++;
  if(g.finalIndex>=g.finalQueue.length){finishSpy(g,'spy','No unanimous final accusation');return;}
- g.accusation={by:null,target:g.finalQueue[g.finalIndex],votes:{}};
+ g.phase='final-nomination';g.accusation=null;
 }
 export function expireSpyRound(g,now=Date.now()){if(g.phase==='talk'&&now>=g.roundEnds){beginFinalVote(g);return true;}return false;}
 export function spyMove(g,id,a){
@@ -69,6 +71,11 @@ export function spyMove(g,id,a){
   if(id!==g.spy||g.phase!=='talk')throw Error('Spy may guess only during timed play');
   finishSpy(g,a.location===g.location?'spy':'agents','Spy guessed '+(a.location===g.location?'correctly':'incorrectly'),a.location===g.location);
   return;
+ }
+ if(g.phase==='final-nomination'){
+  if(id!==g.finalQueue[g.finalIndex]||a.action!=='accuse'||id===a.target||!g.order.includes(a.target))throw Error('Current accuser must nominate another player');
+  g.accusation={by:id,target:a.target,votes:{[id]:true}};
+  g.phase='final-vote';return;
  }
  if(g.phase==='talk'){
   if(a.action!=='accuse'||id===a.target||!g.order.includes(a.target)||g.accused.has(id))throw Error('Invalid accusation');
@@ -98,7 +105,7 @@ export function spyView(g,id){
  const finished=['round-results','results'].includes(g.phase);
  return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),
   roundEnds:g.roundEnds,round:g.round,maxRounds:g.maxRounds,scores:g.scores,
-  accusation:g.accusation,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,last:g.last,
+  accusation:g.accusation,finalAccuser:g.phase==='final-nomination'?g.finalQueue[g.finalIndex]:null,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,last:g.last,
   reveal:finished?{location:g.location,spy:g.spy}:null,overallWinners:g.phase==='results'?g.overallWinners:[]};
 }
 export function setupChameleon(players){valid(players,3,8);const [topic,words]=pick(TOPICS),secret=pick(words),chameleon=pick(order(players));return {kind:'chameleon',phase:'clues',topic,words,secret,chameleon,order:order(players),dealer:players[0].id,clueTurn:0,clues:{},votes:{},suspect:null,guessCount:0,winner:null,points:Object.fromEntries(order(players).map(id=>[id,0])),roundPoints:{},round:1,winners:[],tie:null};}
