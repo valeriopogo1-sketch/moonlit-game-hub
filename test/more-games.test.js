@@ -40,3 +40,18 @@ test('Organ Mayhem instant block restores last attacked organ',()=>{
  organMove(g,attacker,{cardIndex:0,target,part});assert.equal(g.bodies[target][part].hp,0);
  organMove(g,target,{cardIndex:0,instant:true});assert.equal(g.bodies[target][part].hp,2);
 });
+
+test('Five in a Row does not discard dead cards when the replacement deck is empty',()=>{
+ const g=setupLines(players);
+ const id=g.order[g.turn];
+ const before=g.hands[id].length;
+ g.deck=[];
+ assert.throws(()=>lineMove(g,id,{cardIndex:0,discardDead:true}),/No replacement cards/);
+ assert.equal(g.hands[id].length,before);
+});
+test('Organ Mayhem hides discard action during a final defense reaction',()=>{
+ const g=setupOrgans(players);
+ const id=g.order[g.turn];
+ g.phase='reaction';g.reactionTarget=id;
+ assert.equal(organView(g,id).canDiscard,false);
+});
