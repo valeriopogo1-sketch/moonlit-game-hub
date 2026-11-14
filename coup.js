@@ -27,7 +27,7 @@ function claimResult(g,claimant,challenger,cardIndex,block){
  else{p.challengeSuccess=true;p.challengeLoser=claimant;p.afterChallenge=block?'action':'cancel';}
  g.phase='challenge-loss';p.revealedRole=role;p.challengeCard=cardIndex;
 }
-function completeChallenge(g){const p=g.pending;if(p.afterChallenge==='cancel'){next(g);return;}if(p.afterChallenge==='blocked'){next(g);return;}if(p.afterChallenge==='action'){if(p.challengingBlock){p.blockRole=null;effect(g);}else if(['aid','assassinate','steal'].includes(p.action)){if(p.target&&!live(g,p.target)){next(g);return;}g.phase='block';}else effect(g);}}
+function completeChallenge(g){const p=g.pending;if(p.afterChallenge==='cancel'){if(p.action==='assassinate'&&!p.challengingBlock)g.coins[p.actor]+=3;next(g);return;}if(p.afterChallenge==='blocked'){next(g);return;}if(p.afterChallenge==='action'){if(p.challengingBlock){p.blockRole=null;effect(g);}else if(['aid','assassinate','steal'].includes(p.action)){if(p.target&&!live(g,p.target)){next(g);return;}g.phase='block';}else effect(g);}}
 export function coupMove(g,id,a={}){
  if(g.phase==='results')throw Error('Match finished');checkPlayer(g,id);
  const p=g.pending;
