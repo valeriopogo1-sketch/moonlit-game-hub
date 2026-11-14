@@ -14,7 +14,7 @@ function checkPlayer(g,id){if(!live(g,id))throw Error('Player eliminated');}
 function effect(g){const p=g.pending,who=p.actor,target=p.target;if(p.action==='income')g.coins[who]++;
  if(p.action==='aid')g.coins[who]+=2;
  if(p.action==='tax')g.coins[who]+=3;
- if(p.action==='steal'){const n=Math.min(2,g.coins[target]);g.coins[target]-=n;g.coins[who]+=n;}
+ if(p.action==='steal'){if(!live(g,target)){next(g);return;}const n=Math.min(2,g.coins[target]);g.coins[target]-=n;g.coins[who]+=n;}
  if(p.action==='exchange'){const combined=[...g.influence[who].filter(Boolean),g.deck.pop(),g.deck.pop()].filter(Boolean);g.phase='exchange';p.choices=combined;return;}
  if(p.action==='coup'||p.action==='assassinate'){if(!live(g,target)){next(g);return;}g.phase='lose';p.loser=target;return;}
  g.history.push({action:p.action,actor:who,target});next(g);
@@ -27,7 +27,7 @@ function claimResult(g,claimant,challenger,cardIndex,block){
  else{p.challengeSuccess=true;p.challengeLoser=claimant;p.afterChallenge=block?'action':'cancel';}
  g.phase='challenge-loss';p.revealedRole=role;p.challengeCard=cardIndex;
 }
-function completeChallenge(g){const p=g.pending;if(p.afterChallenge==='cancel'){next(g);return;}if(p.afterChallenge==='blocked'){next(g);return;}if(p.afterChallenge==='action'){if(p.challengingBlock){p.blockRole=null;effect(g);}else if(['aid','assassinate','steal'].includes(p.action)){g.phase='block';}else effect(g);}}
+function completeChallenge(g){const p=g.pending;if(p.afterChallenge==='cancel'){next(g);return;}if(p.afterChallenge==='blocked'){next(g);return;}if(p.afterChallenge==='action'){if(p.challengingBlock){p.blockRole=null;effect(g);}else if(['aid','assassinate','steal'].includes(p.action)){if(p.target&&!live(g,p.target)){next(g);return;}g.phase='block';}else effect(g);}}
 export function coupMove(g,id,a={}){
  if(g.phase==='results')throw Error('Match finished');checkPlayer(g,id);
  const p=g.pending;
@@ -53,6 +53,7 @@ export function coupMove(g,id,a={}){
  }
  if(g.phase==='block'){
   if(a.action==='block'){
+   if(p.passes.includes(id))throw Error('Already passed on blocking');
    if(p.action==='aid'){if(id===p.actor)throw Error('Cannot block your own aid');if(a.role!=='Duke')throw Error('Only Duke blocks Foreign Aid');}
    else{if(id!==p.target)throw Error('Only target may block');if(!((p.action==='steal'&&['Ambassador','Captain'].includes(a.role))||(p.action==='assassinate'&&a.role==='Contessa')))throw Error('Invalid blocking role');}
    p.blocker=id;p.blockRole=a.role;p.blockPasses=[];g.phase='block-challenge';return;
