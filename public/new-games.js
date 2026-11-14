@@ -51,6 +51,10 @@ function renderSpy(v,ctx){
  if(g.phase==='talk'){
   action+='<div class="label">PROPOSE A SPY ACCUSATION</div>'+select(options(v))+btn('Propose accusation','accuse','',!g.canAccuse);
   if(spy)action+='<div class="label">SPY MAY REVEAL AND GUESS</div><label class="field"><span>Guess the location</span><select class="input" id="location-guess">'+g.locations.map(l=>'<option value="'+esc(l)+'">'+esc(l)+'</option>').join('')+'</select></label>'+btn('Reveal and guess','guess');
+ }else if(g.phase==='final-nomination'){
+  action='<div class="notice">Time is up. Each player takes a turn nominating a suspect, beginning with the first player. A nomination needs everyone except the suspect to agree.</div>';
+  if(me===g.finalAccuser)action+=select(options(v),'Nominate the suspected Spy')+btn('Nominate suspect','accuse');
+  else action+='<p class="info">Waiting for '+esc(name(g.finalAccuser))+' to nominate a suspect.</p>';
  }else if(['accusation','final-vote'].includes(g.phase)){
   const p=g.accusation;
   action='<div class="notice">'+(g.phase==='final-vote'?'Time is up. Final accusations are checked in order. ':'Accusation in progress. ')+'Suspect: '+esc(name(p.target))+'. All players except the suspect must agree.</div>';
