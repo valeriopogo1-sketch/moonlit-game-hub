@@ -155,11 +155,16 @@ export function chameleonMove(g,id,a){
   resolveSuspect(g,a.target);return;
  }
  if(g.phase==='guess'){
-  if(id!==g.chameleon||a.action!=='guess'||!g.words.includes(a.word))throw Error('Chameleon must select a listed word');
-  if(g.guessedWords.includes(a.word))throw Error('You already guessed that word');
-  g.guessedWords.push(a.word);
+  if(id!==g.chameleon||a.action!=='guess')throw Error('Only the Chameleon may guess');
+  const word=String(a.word||'').trim();
+  if(!word||word.length>50)throw Error('Enter one word to guess');
+  // In 7–8 player games the topic grid is turned face down after clues.
+  // Accept a blind, free-text guess rather than giving the Chameleon the list.
+  if(g.order.length<7&&!g.words.includes(word))throw Error('Chameleon must select a listed word');
+  if(g.guessedWords.some(previous=>previous.toLowerCase()===word.toLowerCase()))throw Error('You already guessed that word');
+  g.guessedWords.push(word);
   g.guessCount++;
-  if(a.word===g.secret)settle(g,1);
+  if(word.toLowerCase()===g.secret.toLowerCase())settle(g,1);
   else if(g.order.length===3&&g.guessCount<2){}else settle(g,0);
   return;
  }
@@ -167,5 +172,5 @@ export function chameleonMove(g,id,a){
 }
 function resolveSuspect(g,target){g.suspect=target;g.tie=null;if(target===g.chameleon)g.phase='guess';else settle(g,2);}
 export function chameleonView(g,id){
- return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.order.length>=7&&['vote','tie'].includes(g.phase)?[]:g.words,clueTurn:g.order[g.clueTurn]||null,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,guessedWords:id===g.chameleon?[...g.guessedWords]:[],winner:g.winner,round:g.round,points:g.points,roundPoints:g.roundPoints,winners:g.winners,reveal:['results','round-results'].includes(g.phase)?{secret:g.secret,chameleon:g.chameleon}:null};
+ return {kind:'chameleon',phase:g.phase,topic:g.topic,words:g.order.length>=7&&['vote','tie','guess'].includes(g.phase)?[]:g.words,clueTurn:g.order[g.clueTurn]||null,secret:id===g.chameleon?null:g.secret,role:id===g.chameleon?'Chameleon':'Codebreaker',clues:g.clues,votesCast:Object.keys(g.votes).length,hasVoted:Object.hasOwn(g.votes,id),dealer:g.dealer,tie:g.tie,suspect:g.suspect,guessCount:g.guessCount,guessedWords:id===g.chameleon?[...g.guessedWords]:[],winner:g.winner,round:g.round,points:g.points,roundPoints:g.roundPoints,winners:g.winners,reveal:['results','round-results'].includes(g.phase)?{secret:g.secret,chameleon:g.chameleon}:null};
 }
