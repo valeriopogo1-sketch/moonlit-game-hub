@@ -20,18 +20,22 @@ export const TOPICS=[
 const order=players=>players.map(x=>x.id);
 function valid(players,min,max){if(players.length<min||players.length>max)throw Error('Requires '+min+'–'+max+' players');}
 function spyDeal(g){
- const [location,roles]=pick(LOCATIONS);const spy=pick(g.order);
+ // The previous round's Spy becomes dealer; avoid repeating a location in a five-round game.
+ g.dealer=g.round===1?g.order[0]:g.spy;
+ const candidates=LOCATIONS.filter(([location])=>!g.usedLocations.includes(location));
+ const [location,roles]=pick(candidates.length?candidates:LOCATIONS),spy=pick(g.order);
+ g.usedLocations.push(location);
  const allRoles=[...new Set([...roles,'Supervisor','Assistant','Inspector','Visitor','Technician','Coordinator','Observer','Custodian','Reporter'])];
  const assigned={};let i=0;
  for(const id of g.order)assigned[id]=id===spy?{spy:true}:{spy:false,location,role:allRoles[i++]};
- g.location=location;g.spy=spy;g.assigned=assigned;g.roundEnds=Date.now()+8*60*1000;
+ g.location=location;g.spy=spy;g.assigned=assigned;g.roundEnds=Date.now()+8*60*1000;g.pausedRemainingMs=null;
  g.accusation=null;g.accused=new Set();g.reason=null;g.winner=null;g.last=null;
  g.finalQueue=[];g.finalIndex=0;g.phase='talk';
 }
 export function setupSpyfall(players){valid(players,3,8);
  const orderIds=order(players);
  const g={kind:'spyfall',phase:'talk',location:null,spy:null,assigned:{},order:orderIds,round:1,maxRounds:5,
-  scores:Object.fromEntries(orderIds.map(id=>[id,0])),roundEnds:0,accusation:null,accused:new Set(),winner:null,reason:null,last:null,overallWinners:[]};
+  scores:Object.fromEntries(orderIds.map(id=>[id,0])),roundEnds:0,pausedRemainingMs:null,dealer:orderIds[0],usedLocations:[],accusation:null,accused:new Set(),winner:null,reason:null,last:null,overallWinners:[]};
  spyDeal(g);return g;
 }
 function finishSpy(g,winner,reason,extra=false){
@@ -50,7 +54,8 @@ function finishSpy(g,winner,reason,extra=false){
 function beginFinalVote(g){
  // When time expires, each player gets a turn as ACCUSER, not as the accused.
  // Accusers nominate their own suspect; the suspect has no vote.
- g.phase='final-nomination';g.finalQueue=[...g.order];g.finalIndex=0;
+ const start=g.order.indexOf(g.dealer);
+ g.phase='final-nomination';g.finalQueue=[...g.order.slice(start),...g.order.slice(0,start)];g.finalIndex=0;
  g.accusation=null;
 }
 function finalVoteAdvance(g){
@@ -79,6 +84,7 @@ export function spyMove(g,id,a){
  }
  if(g.phase==='talk'){
   if(a.action!=='accuse'||id===a.target||!g.order.includes(a.target)||g.accused.has(id))throw Error('Invalid accusation');
+  g.pausedRemainingMs=Math.max(0,g.roundEnds-Date.now());
   g.accused.add(id);g.phase='accusation';g.accusation={by:id,target:a.target,votes:{[id]:true}};
   return;
  }
@@ -90,7 +96,7 @@ export function spyMove(g,id,a){
   p.votes[id]=a.agree;
   if(!a.agree){
    if(g.phase==='final-vote')finalVoteAdvance(g);
-   else{g.phase='talk';g.accusation=null;}
+   else{g.phase='talk';g.accusation=null;g.roundEnds=Date.now()+g.pausedRemainingMs;g.pausedRemainingMs=null;}
    return;
   }
   if(Object.keys(p.votes).length===g.order.length-1){
@@ -104,7 +110,7 @@ export function spyMove(g,id,a){
 export function spyView(g,id){
  const finished=['round-results','results'].includes(g.phase);
  return {kind:'spyfall',phase:g.phase,assignment:g.assigned[id],locations:LOCATIONS.map(a=>a[0]),
-  roundEnds:g.roundEnds,round:g.round,maxRounds:g.maxRounds,scores:g.scores,
+  roundEnds:g.roundEnds,timerPaused:g.phase==='accusation',pausedRemainingMs:g.phase==='accusation'?g.pausedRemainingMs:null,dealer:g.dealer,round:g.round,maxRounds:g.maxRounds,scores:g.scores,
   accusation:g.accusation,finalAccuser:g.phase==='final-nomination'?g.finalQueue[g.finalIndex]:null,canAccuse:!g.accused.has(id),winner:g.winner,reason:g.reason,last:g.last,
   reveal:finished?{location:g.location,spy:g.spy}:null,overallWinners:g.phase==='results'?g.overallWinners:[]};
 }
